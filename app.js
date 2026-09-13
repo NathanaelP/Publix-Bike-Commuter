@@ -126,7 +126,21 @@ function storeKey(s) { return s.ref || s.osm.replace('/', '_'); }
 function routeFor(store, profile) {
   if (S.liveRoute && S.liveRoute.key === storeKey(store)) return S.liveRoute.route;
   var r = S.routes[storeKey(store)];
-  return r ? r[profile || S.profile] : null;
+  if (!r) return null;
+  var route = r[profile || S.profile];
+  if (route && !route.geometry) route.geometry = joinSegments(route.segments);
+  return route;
+}
+
+/* Route geometry ships split into runs of one road rating; stitch them back
+ * into a single line for distance-along and off-route maths. */
+function joinSegments(segments) {
+  var out = [];
+  (segments || []).forEach(function (seg, i) {
+    var pts = seg.coords;
+    out = out.concat(i === 0 ? pts : pts.slice(1));
+  });
+  return out;
 }
 
 function sortedStores() {
@@ -223,16 +237,22 @@ function drawRoute(route) {
   layerHalo.clearLayers();
   if (!route) return;
   var latlngs = route.geometry.map(function (c) { return [c[1], c[0]]; });
-  var color = getComputedStyle(document.documentElement)
-                .getPropertyValue(S.profile === 'quiet' ? '--route-alt' : '--route').trim();
-  L.polyline(latlngs, { color: '#fff', weight: 9, opacity: .85, lineCap: 'round' }).addTo(layerHalo);
-  L.polyline(latlngs, { color: color, weight: 5, opacity: 1, lineCap: 'round' }).addTo(layerRoute);
+  var css = getComputedStyle(document.documentElement);
 
-  // Flag stretches of genuinely hostile road so they are visible on the map.
-  if (route.roads) {
-    var bad = route.roads.some(function (r) { return r.rating === 'avoid'; });
-    if (bad) { /* legend in the sheet carries the detail */ }
-  }
+  // White casing under the whole line keeps it readable over any basemap.
+  L.polyline(latlngs, { color: '#fff', weight: 10, opacity: .9, lineCap: 'round',
+                        lineJoin: 'round' }).addTo(layerHalo);
+
+  // Then each run in the colour of the road it actually uses, so a mile of
+  // trunk highway is visible on the map instead of buried in the total.
+  var segs = route.segments || [{ rating: 'ok', coords: route.geometry }];
+  segs.forEach(function (seg) {
+    var c = css.getPropertyValue(RATE_COLORS[seg.rating] || '--rate-ok').trim();
+    L.polyline(seg.coords.map(function (p) { return [p[1], p[0]]; }), {
+      color: c, weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round'
+    }).addTo(layerRoute);
+  });
+
   if (!S.navigating) {
     map.fitBounds(L.latLngBounds(latlngs), {
       paddingTopLeft: [45, topPx() + 16],
@@ -462,24 +482,25 @@ function parseBrouter(doc, store) {
                from_prev_m: Math.round(cum[cum.length - 1] - prev),
                lat: coords[coords.length - 1][1], lon: coords[coords.length - 1][0] });
 
+  var CLASS = {
+    cycleway: ['Bike path', 'great'], path: ['Path', 'great'],
+    footway: ['Sidewalk / footway', 'good'], pedestrian: ['Pedestrian street', 'good'],
+    track: ['Track', 'good'], living_street: ['Living street', 'great'],
+    residential: ['Residential street', 'great'],
+    service: ['Service road / parking aisle', 'good'],
+    unclassified: ['Minor road', 'good'], tertiary: ['Tertiary road', 'ok'],
+    tertiary_link: ['Tertiary road', 'ok'], secondary: ['Secondary road', 'busy'],
+    secondary_link: ['Secondary road', 'busy'], primary: ['Major arterial', 'busy'],
+    primary_link: ['Major arterial', 'busy'], trunk: ['Highway (trunk)', 'avoid'],
+    trunk_link: ['Highway ramp', 'avoid'], motorway: ['Interstate', 'avoid'],
+    motorway_link: ['Interstate ramp', 'avoid'], steps: ['Steps', 'ok']
+  };
+
   // Road mix, from the same per-segment way tags the build script uses.
   var roads = [];
   var msgs = p.messages || [];
   if (msgs.length > 1) {
     var hdr = msgs[0], iD = hdr.indexOf('Distance'), iT = hdr.indexOf('WayTags');
-    var CLASS = {
-      cycleway: ['Bike path', 'great'], path: ['Path', 'great'],
-      footway: ['Sidewalk / footway', 'good'], pedestrian: ['Pedestrian street', 'good'],
-      track: ['Track', 'good'], living_street: ['Living street', 'great'],
-      residential: ['Residential street', 'great'],
-      service: ['Service road / parking aisle', 'good'],
-      unclassified: ['Minor road', 'good'], tertiary: ['Tertiary road', 'ok'],
-      tertiary_link: ['Tertiary road', 'ok'], secondary: ['Secondary road', 'busy'],
-      secondary_link: ['Secondary road', 'busy'], primary: ['Major arterial', 'busy'],
-      primary_link: ['Major arterial', 'busy'], trunk: ['Highway (trunk)', 'avoid'],
-      trunk_link: ['Highway ramp', 'avoid'], motorway: ['Interstate', 'avoid'],
-      motorway_link: ['Interstate ramp', 'avoid'], steps: ['Steps', 'ok']
-    };
     var acc = {};
     msgs.slice(1).forEach(function (row) {
       var tags = {};
@@ -499,11 +520,42 @@ function parseBrouter(doc, store) {
                   .sort(function (a, b) { return b.m - a.m; });
   }
 
+  // Runs for the live case: group consecutive way segments by rating.
+  var segments = [];
+  if (msgs.length > 1) {
+    var hL = msgs[0].indexOf('Longitude'), hA = msgs[0].indexOf('Latitude');
+    var hT = msgs[0].indexOf('WayTags'), pos = 0;
+    msgs.slice(1).forEach(function (row) {
+      var lon = parseInt(row[hL], 10) / 1e6, lat = parseInt(row[hA], 10) / 1e6;
+      var end = -1;
+      for (var j = pos + 1; j < Math.min(pos + 400, coords.length); j++) {
+        if (Math.abs(coords[j][0] - lon) < 2e-6 && Math.abs(coords[j][1] - lat) < 2e-6) {
+          end = j; break;
+        }
+      }
+      if (end < 0) return;
+      var tg = {};
+      String(row[hT] || '').split(' ').forEach(function (kv) {
+        var i = kv.indexOf('=');
+        if (i > 0) tg[kv.slice(0, i)] = kv.slice(i + 1);
+      });
+      var cl = CLASS[tg.highway] || ['Road', 'ok'];
+      var last = segments[segments.length - 1];
+      if (last && last.rating === cl[1]) last.end = end;
+      else segments.push({ rating: cl[1], label: cl[0], start: pos, end: end });
+      pos = end;
+    });
+    segments = segments.map(function (s) {
+      return { rating: s.rating, label: s.label, coords: coords.slice(s.start, s.end + 1) };
+    }).filter(function (s) { return s.coords.length > 1; });
+  }
+  if (!segments.length) segments = [{ rating: 'ok', label: 'Route', coords: coords }];
+
   return {
     profile: 'live', distance_m: dist, duration_s: dur,
     ascend_m: parseInt(p['filtered ascend'] || 0, 10),
     implied_kmh: dur ? Math.round(dist / 1000 / (dur / 3600) * 10) / 10 : 19,
-    roads: roads, steps: steps, geometry: coords
+    roads: roads, steps: steps, segments: segments, geometry: coords
   };
 }
 

@@ -1,0 +1,1157 @@
+<title>Publix District Bike Routes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --ground: #eef1ec;
+  --surface: #ffffff;
+  --surface-2: #f6f8f5;
+  --ink: #151c17;
+  --ink-soft: #5b665e;
+  --ink-faint: #8b958d;
+  --line: #dce2db;
+  --line-soft: #e7ebe5;
+  --publix: #1c7a41;
+  --publix-ink: #14562e;
+  --publix-wash: #e4f0e8;
+
+  --h-calm: #3f8f5b;
+  --h-good: #6fa34a;
+  --h-ok: #c79b1f;
+  --h-busy: #e0762a;
+  --h-danger: #c0392b;
+
+  --road: #d3d9d1;
+  --road-major: #bcc5ba;
+  --ghost: #a9b6ab;
+
+  --shadow: 0 1px 2px rgba(21, 28, 23, .05), 0 8px 24px -12px rgba(21, 28, 23, .18);
+  --radius: 10px;
+
+  --display: "Barlow Condensed", "Oswald", "Arial Narrow", sans-serif;
+  --body: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #11150f;
+    --surface: #1a201b;
+    --surface-2: #212822;
+    --ink: #e7ede7;
+    --ink-soft: #9aa59b;
+    --ink-faint: #6e786f;
+    --line: #2c342d;
+    --line-soft: #252c26;
+    --publix: #4cb472;
+    --publix-ink: #8fd6a9;
+    --publix-wash: #17281d;
+
+    --h-calm: #4faa6d;
+    --h-good: #85bd5c;
+    --h-ok: #ddb43a;
+    --h-busy: #f08c43;
+    --h-danger: #e05a49;
+
+    --road: #29312a;
+    --road-major: #39433a;
+    --ghost: #46524a;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #11150f;
+  --surface: #1a201b;
+  --surface-2: #212822;
+  --ink: #e7ede7;
+  --ink-soft: #9aa59b;
+  --ink-faint: #6e786f;
+  --line: #2c342d;
+  --line-soft: #252c26;
+  --publix: #4cb472;
+  --publix-ink: #8fd6a9;
+  --publix-wash: #17281d;
+
+  --h-calm: #4faa6d;
+  --h-good: #85bd5c;
+  --h-ok: #ddb43a;
+  --h-busy: #f08c43;
+  --h-danger: #e05a49;
+
+  --road: #29312a;
+  --road-major: #39433a;
+  --ghost: #46524a;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-inline: 18px;
+  padding-block: 26px 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ------------------------------------------------------------------ header */
+
+.masthead { display: flex; flex-direction: column; gap: 7px; }
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--publix);
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(34px, 7vw, 54px);
+  font-weight: 700;
+  line-height: .98;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.standfirst {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--ink-soft);
+  font-size: 15.5px;
+}
+
+.standfirst b { color: var(--ink); font-weight: 600; }
+
+/* ---------------------------------------------------------------- controls */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.ctl { display: flex; align-items: center; gap: 9px; }
+
+.ctl > label {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  width: 132px;
+  accent-color: var(--publix);
+  background: transparent;
+}
+
+.readout {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 62px;
+}
+
+.toggle {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.toggle button {
+  border: 0;
+  margin: 0;
+  padding: 6px 12px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.toggle button + button { border-left: 1px solid var(--line); }
+.toggle button[aria-pressed="true"] { background: var(--publix); color: #fff; }
+.toggle button:focus-visible { outline: 2px solid var(--publix); outline-offset: -2px; }
+
+/* -------------------------------------------------------------- map + card */
+
+.stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1.25fr) minmax(330px, .85fr); }
+}
+
+.mapcard {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+#map { display: block; width: 100%; height: auto; touch-action: pan-y; cursor: grab; }
+#map.dragging { cursor: grabbing; }
+
+.maphint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  padding: 3px 8px;
+  border-radius: 99px;
+  pointer-events: none;
+}
+
+.zoomers {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: grid;
+  gap: 5px;
+}
+
+.zoomers button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.zoomers button:focus-visible { outline: 2px solid var(--publix); outline-offset: 1px; }
+
+/* ------------------------------------------------------------------- card */
+
+.detail {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dhead { display: flex; gap: 13px; align-items: flex-start; }
+
+.dbadge {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--publix);
+  color: #fff;
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+}
+
+.dtitle { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.dtitle h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.dtitle p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fig { background: var(--surface); padding: 11px 12px; }
+
+.fig b {
+  display: block;
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.fig span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.seclabel {
+  font-family: var(--display);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 7px;
+}
+
+.mix {
+  display: flex;
+  height: 13px;
+  border-radius: 99px;
+  overflow: hidden;
+  gap: 1.5px;
+  background: var(--line-soft);
+}
+
+.mix i { display: block; height: 100%; }
+
+.mixkey {
+  list-style: none;
+  margin: 9px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+}
+
+.mixkey li { display: flex; align-items: center; gap: 8px; }
+
+.swatch { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+
+.mixkey .nm { flex: 1; min-width: 0; }
+.mixkey .vl { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.mixkey .lane { color: var(--ink-faint); font-size: 11.5px; }
+
+.alert {
+  display: flex;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border-left: 3px solid var(--h-danger);
+  background: color-mix(in srgb, var(--h-danger) 9%, var(--surface));
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.alert.is-mild { border-left-color: var(--h-busy); background: color-mix(in srgb, var(--h-busy) 9%, var(--surface)); }
+.alert.is-fine { border-left-color: var(--h-calm); background: color-mix(in srgb, var(--h-calm) 9%, var(--surface)); }
+
+.gmaps {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 8px;
+  background: var(--publix);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14.5px;
+  text-decoration: none;
+}
+
+.gmaps:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.gmaps svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+
+details.steps { border-top: 1px solid var(--line); padding-top: 13px; }
+
+details.steps summary {
+  cursor: pointer;
+  font-family: var(--display);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+details.steps summary:focus-visible { outline: 2px solid var(--publix); outline-offset: 2px; }
+
+.steplist {
+  list-style: none;
+  margin: 11px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  font-size: 13.5px;
+}
+
+.steplist li {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.steplist li:last-child { border-bottom: 0; }
+.steplist .turn { flex: none; width: 17px; color: var(--ink-faint); font-size: 15px; line-height: 1.3; }
+.steplist .txt { flex: 1; min-width: 0; }
+.steplist .len { flex: none; color: var(--ink-faint); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 1px; }
+.steplist b { font-weight: 600; }
+
+/* ----------------------------------------------------------------- ladder */
+
+.ladder { display: flex; flex-direction: column; gap: 10px; }
+
+.ladderhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+.ladderhead h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ladderhead p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.rows li + li { border-top: 1px solid var(--line-soft); }
+
+.row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover { background: var(--surface-2); }
+.row:focus-visible { outline: 2px solid var(--publix); outline-offset: -2px; }
+.row[aria-current="true"] { background: var(--publix-wash); }
+
+.rnum {
+  width: 46px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.row[aria-current="true"] .rnum { background: var(--publix); border-color: var(--publix); color: #fff; }
+.rnum.is-home { background: var(--publix-ink); border-color: var(--publix-ink); color: #fff; }
+
+.rmain { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.rtop { display: flex; align-items: center; gap: 7px; min-width: 0; }
+
+.rname {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 14.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--publix-wash);
+  color: var(--publix-ink);
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+/* The bar is the ladder rung: its length is ride time against the longest
+   ride, and its colour breakdown is the road mix for that same route. */
+.rbar { display: flex; height: 7px; border-radius: 99px; overflow: hidden; gap: 1px; }
+.rbar i { display: block; height: 100%; }
+
+.rtime { text-align: right; font-variant-numeric: tabular-nums; }
+.rtime b { display: block; font-family: var(--display); font-size: 19px; font-weight: 700; line-height: 1.05; }
+.rtime span { display: block; font-size: 11.5px; color: var(--ink-faint); }
+
+/* ----------------------------------------------------------------- legend */
+
+.legendbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 11px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.legendbar span { display: inline-flex; align-items: center; gap: 6px; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding-top: 15px;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+footer a { color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Osceola County · Florida</div>
+    <h1>Riding to every Publix in the district</h1>
+    <p class="standfirst">
+      Bicycle routes from <b id="homeName">Club Cortile Circle, Kissimmee</b> to
+      <b id="storeCount">20</b> Publix stores, with the ride time for each and an
+      honest account of the roads you'd be on. Pick a store to draw its route.
+    </p>
+  </header>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="pace">Pace</label>
+      <input id="pace" type="range" min="8" max="28" step="1" value="16"
+             aria-describedby="paceOut">
+      <span class="readout" id="paceOut">10 mph</span>
+    </div>
+    <div class="ctl">
+      <label for="unitMi">Units</label>
+      <div class="toggle">
+        <button id="unitMi" type="button" aria-pressed="true">Miles</button>
+        <button id="unitKm" type="button" aria-pressed="false">km</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="profBal">Route</label>
+      <div class="toggle">
+        <button id="profBal" type="button" aria-pressed="true">Balanced</button>
+        <button id="profQuiet" type="button" aria-pressed="false">Quieter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="mapcard">
+      <svg id="map" viewBox="0 0 1000 760" role="img"
+           aria-label="Map of Publix stores around Kissimmee with the selected bike route"></svg>
+      <div class="zoomers">
+        <button id="zIn" type="button" aria-label="Zoom in">+</button>
+        <button id="zOut" type="button" aria-label="Zoom out">−</button>
+        <button id="zReset" type="button" aria-label="Reset view" style="font-size:13px">⤢</button>
+      </div>
+      <div class="maphint">Drag to pan · scroll to zoom</div>
+    </div>
+
+    <article class="detail" id="detail" aria-live="polite"></article>
+  </div>
+
+  <div class="legendbar" id="legend"></div>
+
+  <section class="ladder">
+    <div class="ladderhead">
+      <h2>Every store by ride time</h2>
+      <p>Bar length is ride time; colour is the road mix for that route.</p>
+    </div>
+    <ul class="rows" id="rows"></ul>
+  </section>
+
+  <footer>
+    <div>Store numbers, names and hours from the Publix store directory. Roads,
+      bike lanes and building positions from OpenStreetMap contributors (ODbL).
+      Cycling routes and durations from BRouter.</div>
+    <div id="genline"></div>
+    <div>Times assume a steady pace and exclude long waits at signalised crossings.
+      Check the road mix before committing to a route you haven't ridden.</div>
+  </footer>
+</div>
+
+<script>
+var DATA = "__DATA__";
+
+var HAZ = {
+  great: { v: '--h-calm',   t: 'Calm' },
+  good:  { v: '--h-good',   t: 'Easy' },
+  ok:    { v: '--h-ok',     t: 'Moderate' },
+  busy:  { v: '--h-busy',   t: 'Busy' },
+  avoid: { v: '--h-danger', t: 'Fast traffic' }
+};
+var HAZ_ORDER = ['great', 'good', 'ok', 'busy', 'avoid'];
+
+var TURN = {
+  left: '↰', right: '↱', 'slight-left': '↖', 'slight-right': '↗',
+  'sharp-left': '↰', 'sharp-right': '↱', straight: '↑', uturn: '↺',
+  roundabout: '⟳', arrive: '◎'
+};
+
+var MI = 1609.344;
+var HOME_REF = '1607';
+
+var state = { sel: null, profile: 'balanced', paceKmh: 16, imperial: true };
+var view = { x: 0, y: 0, w: 1000, h: 760 };
+var proj = null;
+
+function css(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ------------------------------------------------------------- formatting */
+
+function fmtDist(m) {
+  if (state.imperial) {
+    if (m < 500) return Math.round(m * 3.28084 / 10) * 10 + ' ft';
+    return (m / MI).toFixed(m < 16093 ? 1 : 0) + ' mi';
+  }
+  if (m < 950) return Math.round(m / 10) * 10 + ' m';
+  return (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
+}
+
+function fmtTime(sec) {
+  var mins = Math.round(sec / 60);
+  var h = Math.floor(mins / 60), m = mins % 60;
+  return h ? h + 'h ' + (m < 10 ? '0' : '') + m : mins + ' min';
+}
+
+function fmtPace() {
+  return state.imperial
+    ? Math.round(state.paceKmh / 1.609344) + ' mph'
+    : state.paceKmh + ' km/h';
+}
+
+function rideSecs(r) { return r.s * (r.kmh || 19) / state.paceKmh; }
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function routeOf(store) { return DATA.routes[store.ref][state.profile]; }
+
+/* ------------------------------------------------------------- projection */
+
+function buildProjection() {
+  var minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  function see(lon, lat) {
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  see(DATA.start.lon, DATA.start.lat);
+  DATA.stores.forEach(function (s) { see(s.lon, s.lat); });
+  Object.keys(DATA.routes).forEach(function (k) {
+    DATA.routes[k].balanced.segs.forEach(function (sg) {
+      sg.p.forEach(function (p) { see(p[0], p[1]); });
+    });
+  });
+
+  var padLon = (maxLon - minLon) * 0.05, padLat = (maxLat - minLat) * 0.05;
+  minLon -= padLon; maxLon += padLon; minLat -= padLat; maxLat += padLat;
+
+  var kx = Math.cos((minLat + maxLat) / 2 * Math.PI / 180);
+  var spanX = (maxLon - minLon) * kx, spanY = maxLat - minLat;
+  // Inset by more than a pin radius so edge stores are never clipped.
+  var pad = 26;
+  var scale = Math.min((1000 - pad * 2) / spanX, (760 - pad * 2) / spanY);
+  var offX = pad + (1000 - pad * 2 - spanX * scale) / 2;
+  var offY = pad + (760 - pad * 2 - spanY * scale) / 2;
+
+  return {
+    bounds: [minLon, minLat, maxLon, maxLat],
+    xy: function (lon, lat) {
+      return [offX + (lon - minLon) * kx * scale,
+              offY + (maxLat - lat) * scale];
+    }
+  };
+}
+
+function pathOf(points) {
+  var d = '', i;
+  for (i = 0; i < points.length; i++) {
+    var p = proj.xy(points[i][0], points[i][1]);
+    d += (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+  }
+  return d;
+}
+
+/* -------------------------------------------------------------------- map */
+
+function drawMap() {
+  var svg = document.getElementById('map');
+  var parts = [];
+
+  // Backdrop: the real road network, so routes sit in a recognisable place.
+  var byClass = [[], [], [], []];
+  DATA.basemap.forEach(function (ln) { byClass[ln[0]].push(ln); });
+  var widths = [0.7, 1.1, 1.8, 2.6];
+  byClass.forEach(function (group, cls) {
+    if (!group.length) return;
+    var d = group.map(function (ln) { return pathOf(ln[2]); }).join('');
+    parts.push('<path d="' + d + '" fill="none" stroke="' +
+      (cls >= 2 ? css('--road-major') : css('--road')) +
+      '" stroke-width="' + widths[cls] + '" stroke-linecap="round" ' +
+      'stroke-linejoin="round"/>');
+  });
+
+  // Every other route, ghosted, so the district's shape reads at a glance.
+  var ghost = css('--ghost');
+  DATA.stores.forEach(function (s) {
+    if (state.sel && s.ref === state.sel.ref) return;
+    var d = DATA.routes[s.ref][state.profile].segs
+      .map(function (sg) { return pathOf(sg.p); }).join('');
+    parts.push('<path d="' + d + '" fill="none" stroke="' + ghost +
+      '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" ' +
+      'opacity=".9"/>');
+  });
+
+  // The selected route: a casing, then one stroke per road-hazard run.
+  if (state.sel) {
+    var route = routeOf(state.sel);
+    var all = route.segs.map(function (sg) { return pathOf(sg.p); }).join('');
+    parts.push('<path d="' + all + '" fill="none" stroke="' + css('--surface') +
+      '" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>');
+    route.segs.forEach(function (sg) {
+      parts.push('<path d="' + pathOf(sg.p) + '" fill="none" stroke="' +
+        css(HAZ[sg.r] ? HAZ[sg.r].v : '--h-ok') +
+        '" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>');
+    });
+  }
+
+  var svgStatic = parts.join('');
+
+  parts = [];
+  svg.innerHTML = '<g id="mapStatic">' + svgStatic + '</g>' + '<g id="mapPins"></g>';
+  applyView();
+  drawPins();
+}
+
+/* Pins are sized in user units, so they must shrink as the viewBox does to
+ * stay the same size on screen. Only this group is rebuilt while zooming. */
+function drawPins() {
+  var k = view.w / 1000;
+  var parts = [];
+  var h = proj.xy(DATA.start.lon, DATA.start.lat);
+  parts.push('<g transform="translate(' + h[0].toFixed(1) + ' ' + h[1].toFixed(1) +
+    ') scale(' + k.toFixed(3) + ')">' +
+    '<circle r="9" fill="' + css('--surface') + '" stroke="' + css('--ink') +
+    '" stroke-width="2.4"/><circle r="3.4" fill="' + css('--ink') + '"/></g>');
+
+  DATA.stores.forEach(function (s) {
+    var p = proj.xy(s.lon, s.lat);
+    var on = state.sel && s.ref === state.sel.ref;
+    var home = s.ref === HOME_REF;
+    var fill = on ? css('--publix') : (home ? css('--publix-ink') : css('--surface'));
+    var ink = (on || home) ? '#fff' : css('--ink');
+    parts.push(
+      '<g class="pin" data-ref="' + s.ref + '" tabindex="0" role="button" ' +
+      'aria-label="Store ' + s.ref + ', ' + esc(s.name) + '" ' +
+      'transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') scale(' +
+        k.toFixed(3) + ')" style="cursor:pointer">' +
+      '<circle r="' + (on ? 17 : 14.5) + '" fill="' + fill + '" stroke="' +
+        (on ? css('--publix') : css('--ink-faint')) + '" stroke-width="' +
+        (on ? 2.4 : 1.5) + '"/>' +
+      '<text y="4.6" text-anchor="middle" fill="' + ink + '" ' +
+        'font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" ' +
+        'font-size="' + (on ? 15 : 13) + '">' + esc(s.ref) + '</text></g>');
+  });
+
+  var g = document.getElementById('mapPins');
+  if (g) g.innerHTML = parts.join('');
+  bindPins();
+}
+
+function applyView() {
+  document.getElementById('map').setAttribute('viewBox',
+    view.x.toFixed(1) + ' ' + view.y.toFixed(1) + ' ' +
+    view.w.toFixed(1) + ' ' + view.h.toFixed(1));
+}
+
+function bindPins() {
+  var svg = document.getElementById('map');
+  [].forEach.call(svg.querySelectorAll('.pin'), function (g) {
+    g.addEventListener('click', function () { select(g.dataset.ref); });
+    g.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(g.dataset.ref); }
+    });
+  });
+}
+
+/* ----------------------------------------------------------------- detail */
+
+function mixBar(route, height) {
+  var total = route.roads.reduce(function (a, r) { return a + r.m; }, 0) || 1;
+  return route.roads.map(function (r) {
+    return '<i style="width:' + (100 * r.m / total).toFixed(2) + '%;background:' +
+      css(HAZ[r.r] ? HAZ[r.r].v : '--h-ok') + '"></i>';
+  }).join('');
+}
+
+function verdict(route) {
+  var rough = route.roads.filter(function (r) { return r.r === 'avoid' || r.r === 'busy'; });
+  var m = rough.reduce(function (a, r) { return a + r.m; }, 0);
+  var lane = rough.reduce(function (a, r) { return a + (r.bl || 0); }, 0);
+  var worst = route.roads.filter(function (r) { return r.r === 'avoid'; })
+                         .reduce(function (a, r) { return a + r.m; }, 0);
+  if (m < 200) {
+    return { cls: 'is-fine', text: 'Quiet roads essentially the whole way — ' +
+      'residential streets, service roads and paths.' };
+  }
+  var share = Math.round(100 * m / route.m);
+  var names = rough.map(function (r) { return r.l.toLowerCase(); }).join(' and ');
+  var tail;
+  if (lane >= m * 0.8) {
+    tail = 'A marked bike lane covers most of it, but traffic moves fast.';
+  } else if (lane > 0) {
+    tail = 'Only ' + fmtDist(lane) + ' of that has a marked bike lane.';
+  } else {
+    tail = 'No bike lane is mapped on any of it.';
+  }
+  return {
+    cls: worst > 400 ? '' : 'is-mild',
+    text: fmtDist(m) + ' of this route (' + share + '%) runs on ' + names + '. ' + tail
+  };
+}
+
+function gmapsHref(store, route) {
+  var pts = [];
+  route.segs.forEach(function (sg) { pts = pts.concat(sg.p); });
+  var wp = [];
+  for (var i = 1; i <= 6; i++) {
+    var c = pts[Math.round(i * (pts.length - 1) / 7)];
+    if (c) wp.push(c[1].toFixed(5) + ',' + c[0].toFixed(5));
+  }
+  return 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling' +
+    '&origin=' + DATA.start.lat + ',' + DATA.start.lon +
+    '&destination=' + store.lat + ',' + store.lon +
+    (wp.length ? '&waypoints=' + encodeURIComponent(wp.join('|')) : '');
+}
+
+function renderDetail() {
+  var box = document.getElementById('detail');
+  var s = state.sel;
+  if (!s) { box.innerHTML = ''; return; }
+  var r = routeOf(s);
+  var total = r.roads.reduce(function (a, x) { return a + x.m; }, 0) || 1;
+  var v = verdict(r);
+
+  var key = r.roads.map(function (x) {
+    return '<li><span class="swatch" style="background:' +
+      css(HAZ[x.r] ? HAZ[x.r].v : '--h-ok') + '"></span>' +
+      '<span class="nm">' + esc(x.l) +
+      (x.bl ? ' <span class="lane">bike lane ' + fmtDist(x.bl) + '</span>' : '') +
+      '</span><span class="vl">' + fmtDist(x.m) + ' · ' +
+      Math.round(100 * x.m / total) + '%</span></li>';
+  }).join('');
+
+  var steps = r.steps.map(function (x) {
+    var onto = x.st ? (x.i === 'straight' ? ' on <b>' : ' onto <b>') + esc(x.st) + '</b>' : '';
+    return '<li><span class="turn">' + (TURN[x.i] || '↑') + '</span>' +
+      '<span class="txt">' + esc(x.v) + onto + '</span>' +
+      '<span class="len">' + fmtDist(x.d) + '</span></li>';
+  }).join('');
+
+  box.innerHTML =
+    '<div class="dhead">' +
+      '<div class="dbadge">' + esc(s.ref) + '</div>' +
+      '<div class="dtitle"><h2>' + esc(s.name) + '</h2>' +
+      '<p>' + esc(s.street) + ', ' + esc(s.city) + ' ' + esc(s.zip) +
+      (s.hours ? ' · ' + esc(s.hours) : '') + '</p></div>' +
+    '</div>' +
+    '<div class="figures">' +
+      '<div class="fig"><b>' + fmtTime(rideSecs(r)) + '</b><span>ride time</span></div>' +
+      '<div class="fig"><b>' + fmtDist(r.m) + '</b><span>distance</span></div>' +
+      '<div class="fig"><b>' + Math.round(100 * (total - r.roads
+        .filter(function (x) { return x.r === 'busy' || x.r === 'avoid'; })
+        .reduce(function (a, x) { return a + x.m; }, 0)) / total) +
+        '%</b><span>calm roads</span></div>' +
+    '</div>' +
+    '<div><div class="seclabel">What you ride on</div>' +
+      '<div class="mix">' + mixBar(r) + '</div>' +
+      '<ul class="mixkey">' + key + '</ul></div>' +
+    '<div class="alert ' + v.cls + '">' + v.text + '</div>' +
+    '<a class="gmaps" href="' + gmapsHref(s, r) + '" target="_blank" rel="noopener">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z"/>' +
+      '<circle cx="12" cy="10" r="2.5"/></svg> Open this route in Google Maps</a>' +
+    '<details class="steps"><summary>Turn-by-turn · ' + r.steps.length + ' steps</summary>' +
+      '<ol class="steplist">' + steps + '</ol></details>';
+}
+
+/* ----------------------------------------------------------------- ladder */
+
+function renderRows() {
+  var maxSecs = 0;
+  DATA.stores.forEach(function (s) {
+    maxSecs = Math.max(maxSecs, rideSecs(routeOf(s)));
+  });
+
+  var ordered = DATA.stores.slice().sort(function (a, b) {
+    return routeOf(a).m - routeOf(b).m;
+  });
+
+  document.getElementById('rows').innerHTML = ordered.map(function (s) {
+    var r = routeOf(s);
+    var secs = rideSecs(r);
+    var total = r.roads.reduce(function (a, x) { return a + x.m; }, 0) || 1;
+    var bar = r.roads.map(function (x) {
+      return '<i style="width:' + (100 * x.m / total).toFixed(2) + '%;background:' +
+        css(HAZ[x.r] ? HAZ[x.r].v : '--h-ok') + '"></i>';
+    }).join('');
+    var on = state.sel && state.sel.ref === s.ref;
+    return '<li><button class="row" type="button" data-ref="' + s.ref + '"' +
+      (on ? ' aria-current="true"' : '') + '>' +
+      '<span class="rnum' + (s.ref === HOME_REF ? ' is-home' : '') + '">' + esc(s.ref) + '</span>' +
+      '<span class="rmain">' +
+        '<span class="rtop"><span class="rname">' + esc(s.name) + '</span>' +
+        (s.ref === HOME_REF ? '<span class="tag">Home</span>' : '') + '</span>' +
+        '<span class="rbar" style="width:' +
+          Math.max(12, 100 * secs / maxSecs).toFixed(1) + '%">' + bar + '</span>' +
+      '</span>' +
+      '<span class="rtime"><b>' + fmtTime(secs) + '</b><span>' + fmtDist(r.m) + '</span></span>' +
+      '</button></li>';
+  }).join('');
+
+  [].forEach.call(document.querySelectorAll('.row'), function (b) {
+    b.addEventListener('click', function () { select(b.dataset.ref); });
+  });
+}
+
+function renderLegend() {
+  document.getElementById('legend').innerHTML =
+    '<strong style="color:var(--ink);font-weight:600">Road mix</strong>' +
+    HAZ_ORDER.map(function (k) {
+      return '<span><span class="swatch" style="background:' + css(HAZ[k].v) +
+        '"></span>' + HAZ[k].t + '</span>';
+    }).join('');
+}
+
+/* -------------------------------------------------------------- behaviour */
+
+function select(ref) {
+  state.sel = null;
+  DATA.stores.forEach(function (s) { if (s.ref === ref) state.sel = s; });
+  renderDetail();
+  renderRows();
+  drawMap();
+}
+
+function renderAll() {
+  renderDetail();
+  renderRows();
+  renderLegend();
+  drawMap();
+}
+
+function wireZoom() {
+  var svg = document.getElementById('map');
+  var drag = null;
+
+  function clamp() {
+    view.w = Math.min(1000, Math.max(90, view.w));
+    view.h = view.w * 0.76;
+    view.x = Math.min(1000 - view.w, Math.max(0, view.x));
+    view.y = Math.min(760 - view.h, Math.max(0, view.y));
+  }
+
+  function zoomAt(factor, cx, cy) {
+    var w0 = view.w;
+    view.w = w0 * factor;
+    clamp();
+    view.x += (cx - view.x) * (1 - view.w / w0);
+    view.y += (cy - view.y) * (1 - view.h / (w0 * 0.76));
+    clamp();
+    applyView();
+    drawPins();
+  }
+
+  function toUser(e) {
+    var r = svg.getBoundingClientRect();
+    return [view.x + (e.clientX - r.left) / r.width * view.w,
+            view.y + (e.clientY - r.top) / r.height * view.h];
+  }
+
+  svg.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var p = toUser(e);
+    zoomAt(e.deltaY > 0 ? 1.15 : 0.87, p[0], p[1]);
+  }, { passive: false });
+
+  svg.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.pin')) return;
+    drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+    svg.classList.add('dragging');
+    svg.setPointerCapture(e.pointerId);
+  });
+
+  svg.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var r = svg.getBoundingClientRect();
+    view.x = drag.vx - (e.clientX - drag.x) / r.width * view.w;
+    view.y = drag.vy - (e.clientY - drag.y) / r.height * view.h;
+    clamp();
+    applyView();
+  });
+
+  ['pointerup', 'pointercancel'].forEach(function (ev) {
+    svg.addEventListener(ev, function () { drag = null; svg.classList.remove('dragging'); });
+  });
+
+  document.getElementById('zIn').addEventListener('click', function () {
+    zoomAt(0.75, view.x + view.w / 2, view.y + view.h / 2);
+  });
+  document.getElementById('zOut').addEventListener('click', function () {
+    zoomAt(1.33, view.x + view.w / 2, view.y + view.h / 2);
+  });
+  document.getElementById('zReset').addEventListener('click', function () {
+    view = { x: 0, y: 0, w: 1000, h: 760 };
+    applyView();
+    drawPins();
+  });
+}
+
+function wire() {
+  document.getElementById('pace').addEventListener('input', function (e) {
+    state.paceKmh = +e.target.value;
+    document.getElementById('paceOut').textContent = fmtPace();
+    renderDetail();
+    renderRows();
+  });
+
+  function pair(aId, bId, onA, onB) {
+    var a = document.getElementById(aId), b = document.getElementById(bId);
+    a.addEventListener('click', function () {
+      a.setAttribute('aria-pressed', 'true');
+      b.setAttribute('aria-pressed', 'false');
+      onA();
+    });
+    b.addEventListener('click', function () {
+      b.setAttribute('aria-pressed', 'true');
+      a.setAttribute('aria-pressed', 'false');
+      onB();
+    });
+  }
+
+  pair('unitMi', 'unitKm',
+    function () { state.imperial = true; document.getElementById('paceOut').textContent = fmtPace(); renderDetail(); renderRows(); },
+    function () { state.imperial = false; document.getElementById('paceOut').textContent = fmtPace(); renderDetail(); renderRows(); });
+
+  pair('profBal', 'profQuiet',
+    function () { state.profile = 'balanced'; renderAll(); },
+    function () { state.profile = 'quiet'; renderAll(); });
+
+  wireZoom();
+
+  // Redraw on theme flip so every stroke picks up the new tokens.
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onFlip = function () { renderAll(); };
+    if (mq.addEventListener) mq.addEventListener('change', onFlip);
+    else if (mq.addListener) mq.addListener(onFlip);
+  }
+}
+
+function boot() {
+  proj = buildProjection();
+  document.getElementById('homeName').textContent =
+    DATA.start.name + ', ' + DATA.start.city.replace(', FL 34746', '');
+  document.getElementById('storeCount').textContent = DATA.stores.length;
+  document.getElementById('genline').textContent =
+    'Routes computed ' + DATA.generated + ' · ' + DATA.stores.length +
+    ' stores within about 9 miles of home.';
+  document.getElementById('paceOut').textContent = fmtPace();
+
+  // Open on the home store, so the page shows what it does at rest.
+  DATA.stores.forEach(function (s) { if (s.ref === HOME_REF) state.sel = s; });
+  if (!state.sel) state.sel = DATA.stores[0];
+
+  wire();
+  renderAll();
+}
+
+boot();
+</script>

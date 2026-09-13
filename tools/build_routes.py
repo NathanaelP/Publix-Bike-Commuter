@@ -235,6 +235,60 @@ def road_breakdown(props):
     return sorted(totals.values(), key=lambda e: -e["m"])
 
 
+def segment_runs(props, coords):
+    """Split the track into consecutive runs sharing one road rating.
+
+    BRouter reports one message per way segment, each carrying that segment's
+    end node and its OSM tags. Walking those against the track geometry lets us
+    colour the drawn route by how the road actually rides, rather than painting
+    the whole line one colour and hiding a mile of trunk highway inside it.
+    """
+    msgs = props.get("messages") or []
+    if len(msgs) < 2:
+        return [{"rating": "ok", "label": "Route", "coords": coords}]
+    header = msgs[0]
+    i_lon, i_lat = header.index("Longitude"), header.index("Latitude")
+    i_tags = header.index("WayTags")
+
+    runs, cur, pos = [], 0, 0
+    for row in msgs[1:]:
+        try:
+            lon = int(row[i_lon]) / 1e6
+            lat = int(row[i_lat]) / 1e6
+        except (TypeError, ValueError):
+            continue
+        # Find this segment's end node in the track, scanning forward only.
+        end = None
+        for j in range(pos + 1, min(pos + 400, len(coords))):
+            if abs(coords[j][0] - lon) < 2e-6 and abs(coords[j][1] - lat) < 2e-6:
+                end = j
+                break
+        if end is None:
+            continue
+        tags = dict(kv.split("=", 1) for kv in row[i_tags].split() if "=" in kv)
+        hw = tags.get("highway", "unknown")
+        label, rating = ROAD_CLASSES.get(hw, (hw.replace("_", " ").title(), "ok"))
+        if runs and runs[-1]["rating"] == rating:
+            runs[-1]["end"] = end
+        else:
+            runs.append({"rating": rating, "label": label, "start": pos, "end": end})
+        pos = end
+    if not runs:
+        return [{"rating": "ok", "label": "Route", "coords": coords}]
+    if runs[-1]["end"] < len(coords) - 1:
+        runs[-1]["end"] = len(coords) - 1
+
+    out = []
+    for run in runs:
+        # Overlap by one point so the drawn line has no gaps at colour changes.
+        pts = coords[run["start"]:run["end"] + 1]
+        if len(pts) < 2:
+            continue
+        out.append({"rating": run["rating"], "label": run["label"],
+                    "coords": simplify(pts)})
+    return out
+
+
 def cumulative(coords):
     out = [0.0]
     for i in range(1, len(coords)):
@@ -336,10 +390,11 @@ def main():
                 "roads": road_breakdown(props),
                 "steps": directions(props, coords, index,
                                     store["name"] or "the store"),
-                "geometry": simplify(coords),
+                "segments": segment_runs(props, coords),
             }
+            pts = sum(len(s["coords"]) for s in entry[label]["segments"])
             print(f"      {label:8} {dist_m/1000:5.2f} km  {dur_s//60:2}m{dur_s%60:02}s"
-                  f"  ({len(entry[label]['geometry'])} pts)")
+                  f"  ({len(entry[label]['segments'])} runs, {pts} pts)")
             time.sleep(REQUEST_DELAY_S)
         routes[key] = entry
 

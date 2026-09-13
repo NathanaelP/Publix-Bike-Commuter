@@ -118,6 +118,14 @@ of minutes.
 
 Full chart of every store: **[docs/ROUTES.md](docs/ROUTES.md)**.
 
+## The standalone map
+
+`docs/district-map.html` is a single self-contained file — the same stores,
+routes, times and directions, drawn on a vector map built from the real road
+network. It has no tile server and no routing API behind it, so it opens from a
+phone, a USB stick or an email attachment and keeps working with no connection
+at all. Open it in any browser; nothing to install.
+
 ## Ride safe
 
 Several of these routes use trunk-class highways because Osceola County's grid
