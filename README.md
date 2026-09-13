@@ -1,19 +1,24 @@
 # Publix Bike Commuter
 
 Bicycle routes, travel times and turn-by-turn directions from **Club Cortile
-Circle, Kissimmee FL** to every Publix in the surrounding district — as an
+Circle, Kissimmee FL** to every Publix within **30 miles** — 111 stores — as an
 offline-capable web app you can install on an Android phone.
+
+Routes prefer the sidewalk network over the trunk highways, which is both legal
+here and a great deal safer. See [Why sidewalks](#why-sidewalks) below.
 
 ![app icon](icons/icon-192.png)
 
 ## What it does
 
-- **Map of every store**, each pin labelled with its real Publix store number
-  (your home store **#1607 Sunrise City Plaza** is picked out in red).
+- **Map of all 111 stores** within 30 miles, each pin labelled with its real
+  Publix store number (home store **#1607 Sunrise City Plaza** picked out in
+  red).
 - **Tap a store → the route draws itself**, with distance, ride time and an
   arrival clock time.
 - **Two routes per store.** *Balanced* is the sensible everyday line;
-  *Quieter roads* trades distance for calmer streets.
+  *Avoid traffic* leans harder on sidewalks and paths, and will detour to stay
+  off fast roads.
 - **"What you're riding on."** Every route is broken down by road class —
   bike path, residential, arterial, trunk highway — with the mileage and
   whether there's a bike lane. This is Florida; a five-minute saving that puts
@@ -81,37 +86,88 @@ Store data © Publix Super Markets. Map data © OpenStreetMap contributors, ODbL
 ## Regenerating the data
 
 ```bash
+python3 tools/make_profiles.py    # regenerate routing profiles -> tools/profiles/
 python3 tools/fetch_stores.py     # refresh the store list  -> data/stores.json
-python3 tools/build_routes.py     # recompute every route   -> data/routes.json
+python3 tools/build_routes.py     # recompute every route   -> data/routes*
 python3 tools/make_chart.py       # rebuild the time chart  -> docs/ROUTES.md
+python3 tools/make_artifact.py    # rebuild the standalone map
 ```
+
+`build_routes.py --resume` continues an interrupted run. Street names for turn
+directions come from a local Overpass cache; `--fetch-names` looks up more, but
+Overpass is often too busy to serve an area this size, and a turn with no name
+still routes correctly — it just doesn't say what it turns onto.
+
+### How the route data is laid out
+
+111 stores of geometry is too much to load at once on a phone, so it is split:
+
+| File | Holds | When it loads |
+|---|---|---|
+| `data/stores.json` | every store's identity and position | at boot |
+| `data/routes-index.json` | distance, duration and road mix per store | at boot |
+| `data/routes/<store>.json` | that store's geometry and turn list | when you open the store |
+
+The service worker precaches the first two and keeps each route file after its
+first view, so a store you have opened stays available with no signal.
 
 `tools/make_icons.mjs` regenerates the app icons (needs `npm i playwright`).
 
-### Changing the home address or the store set
+### Changing the home address or the radius
 
 Both live at the top of `tools/fetch_stores.py`:
 
 ```python
 START = (28.328194, -81.464348)   # Club Cortile Circle
-DISTRICT_RADIUS_KM = 15.0         # what counts as "the district"
-MAP_RADIUS_KM = 30.0              # also shown, routed live on demand
+DISTRICT_RADIUS_KM = 48.28        # 30 miles
+MAP_RADIUS_KM = 48.28
 ```
 
-Change them, re-run both scripts, and the app picks it up. Stores outside the
-district radius still appear on the map (tap the layers button) and get routed
-live from BRouter when you select one.
+Change them, re-run the scripts above, and the app picks it up.
 
-## About "the district"
+## Why sidewalks
+
+BRouter's stock cycling profiles encode German and EU road law, under which
+riding on a footway is forbidden unless it is signed for bicycles. In
+`trekking.brf` that is one line:
+
+```
+else if vehicle= then ( if highway=footway then false else defaultaccess )
+```
+
+Any `highway=footway` with no explicit `bicycle=` tag is access-denied. Around
+Kissimmee that rules out almost the entire sidewalk network — of 8,700+ mapped
+footways in the core area, 3,400+ tagged `footway=sidewalk`, only about 170
+carry any bicycle tag at all. The router's answer was to put the rider on
+US-192.
+
+Florida law runs the other way: **§316.2065(9)–(11) permits riding on sidewalks**
+unless a local ordinance forbids it, with the rider taking on the rights and
+duties of a pedestrian. `tools/make_profiles.py` generates two profiles that
+encode that, and re-price the fast roads to match how they actually ride.
+
+The difference is not subtle. Store **#1431 Water Tower Shoppes**, same distance
+and the same 24 minutes either way:
+
+| | Trunk highway | Sidewalk |
+|---|---|---|
+| stock `trekking` | 3.61 mi (69%) | 0 |
+| `florida-balanced` | **0** | 4.54 mi (87%) |
+
+Ways tagged `bicycle=no` are still refused, so genuine local bans are respected.
+
+Sidewalks are not free of risk — they trade exposure to fast traffic for
+conflicts at driveways and intersections — so they are rated *good* rather than
+*best* in the road mix, below a quiet residential street or a proper bike path.
+
+## About the store set
 
 Publix's internal district rosters aren't published anywhere I can read, so
-**the store set here is geographic, not official**: every Publix within 15 km
-straight-line of Club Cortile Circle, which comes to 20 stores across
-Kissimmee, Celebration, Hunter's Creek and south Orlando.
+**the store set here is geographic, not official**: every Publix within 30 miles
+straight-line of Club Cortile Circle, which comes to 111 stores reaching
+Orlando, Winter Haven, Clermont, Oviedo and Lake Mary.
 
-If your actual district roster differs, the fix is a one-line edit — adjust
-`DISTRICT_RADIUS_KM`, or hard-code the store numbers you want in
-`tools/build_routes.py` via `--refs`:
+To change it, edit `tools/fetch_stores.py`, or build a hand-picked set:
 
 ```bash
 python3 tools/build_routes.py --refs 1607 1431 812 1194 707
@@ -137,8 +193,11 @@ at all. Open it in any browser; nothing to install.
 
 ## Ride safe
 
-Several of these routes use trunk-class highways because Osceola County's grid
-leaves no alternative. The app flags every such stretch and tells you whether a
-bike lane is mapped. Check the "What you're riding on" panel before committing
-to a route you haven't ridden, and prefer the quieter option where the detour
-is small.
+Most routes now stay off the trunk highways entirely, but not all of them can —
+some corridors have no sidewalk and no alternative. The app flags every such
+stretch and says whether a bike lane is mapped there. Check the "What you're
+riding on" panel before committing to a route you haven't ridden.
+
+Sidewalk riding has its own hazards: drivers pulling out of driveways and
+turning at intersections often aren't looking for someone moving at bike speed
+on the footpath. Slow down at crossings.

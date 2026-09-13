@@ -5,10 +5,12 @@
  * them (bounded), and live re-routing needs a connection. */
 'use strict';
 
-var VERSION = 'pbc-v1';
+var VERSION = 'pbc-v2';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
+var ROUTES = VERSION + '-routes';
 var TILE_LIMIT = 600;
+var ROUTE_LIMIT = 200;
 
 var SHELL_FILES = [
   './',
@@ -24,7 +26,9 @@ var SHELL_FILES = [
   'vendor/images/layers.png',
   'vendor/images/layers-2x.png',
   'data/stores.json',
-  'data/routes.json',
+  'data/routes-index.json',
+  'profiles/florida-balanced.brf',
+  'profiles/florida-calm.brf',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/maskable-512.png'
@@ -42,7 +46,7 @@ self.addEventListener('activate', function (e) {
   e.waitUntil(
     caches.keys().then(function (keys) {
       return Promise.all(keys.map(function (k) {
-        if (k !== SHELL && k !== TILES) return caches.delete(k);
+        if (k !== SHELL && k !== TILES && k !== ROUTES) return caches.delete(k);
       }));
     }).then(function () { return self.clients.claim(); })
   );
@@ -70,6 +74,25 @@ self.addEventListener('fetch', function (e) {
           if (hit) return hit;
           return fetch(req).then(function (res) {
             if (res.ok) { c.put(req, res.clone()); trimCache(TILES, TILE_LIMIT); }
+            return res;
+          }).catch(function () {
+            return new Response('', { status: 504, statusText: 'offline' });
+          });
+        });
+      })
+    );
+    return;
+  }
+
+  // Per-store route files: keep each one after its first view, so a store you
+  // have opened stays available with no signal.
+  if (url.origin === location.origin && /\/data\/routes\//.test(url.pathname)) {
+    e.respondWith(
+      caches.open(ROUTES).then(function (c) {
+        return c.match(req).then(function (hit) {
+          if (hit) return hit;
+          return fetch(req).then(function (res) {
+            if (res.ok) { c.put(req, res.clone()); trimCache(ROUTES, ROUTE_LIMIT); }
             return res;
           }).catch(function () {
             return new Response('', { status: 504, statusText: 'offline' });

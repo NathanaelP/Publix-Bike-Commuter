@@ -8,7 +8,13 @@
 'use strict';
 
 var BROUTER = 'https://brouter.de/brouter';
-var PROFILE_NAMES = { balanced: 'trekking', quiet: 'safety' };
+/* Our own profiles, shipped as static files. BRouter's stock profiles refuse
+ * untagged footways, which here means refusing the sidewalk network and putting
+ * you on US-192 instead; see tools/make_profiles.py. They are uploaded once and
+ * the returned id cached, so live re-routes match the baked-in routes. */
+var PROFILE_FILES = { balanced: 'profiles/florida-balanced.brf',
+                      quiet: 'profiles/florida-calm.brf' };
+var PROFILE_FALLBACK = { balanced: 'trekking', quiet: 'safety' };
 var OFF_ROUTE_M = 60;       // how far off the line before we re-route
 var RATE_COLORS = {
   great: '--rate-great', good: '--rate-good', ok: '--rate-ok',
@@ -32,7 +38,10 @@ var STEP_ICONS = {
 
 var S = {
   stores: [],
-  routes: {},
+  routes: {},        // summary per store: distance, duration, road mix
+  detail: {},        // full geometry + turns, fetched when a store is opened
+  detailPending: {},
+  brouterProfile: null,
   start: null,
   selected: null,
   profile: 'balanced',
@@ -124,12 +133,34 @@ function projectOnRoute(coords, lat, lon) {
 function storeKey(s) { return s.ref || s.osm.replace('/', '_'); }
 
 function routeFor(store, profile) {
-  if (S.liveRoute && S.liveRoute.key === storeKey(store)) return S.liveRoute.route;
-  var r = S.routes[storeKey(store)];
-  if (!r) return null;
-  var route = r[profile || S.profile];
-  if (route && !route.geometry) route.geometry = joinSegments(route.segments);
-  return route;
+  var key = storeKey(store);
+  profile = profile || S.profile;
+  if (S.liveRoute && S.liveRoute.key === key) return S.liveRoute.route;
+  var full = S.detail[key] && S.detail[key][profile];
+  if (full) {
+    if (!full.geometry) full.geometry = joinSegments(full.segments);
+    return full;
+  }
+  var brief = S.routes[key];
+  return brief ? brief[profile] : null;   // stats only; no geometry yet
+}
+
+/* Geometry and turn lists live in one file per store so the app boots on the
+ * index alone. Fetch a store's file the first time it is opened. */
+function loadDetail(store) {
+  var key = storeKey(store);
+  if (S.detail[key]) return Promise.resolve(S.detail[key]);
+  if (S.detailPending[key]) return S.detailPending[key];
+  var job = fetch('data/routes/' + encodeURIComponent(key) + '.json')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (doc) { S.detail[key] = doc; delete S.detailPending[key]; return doc; })
+    .catch(function (err) {
+      delete S.detailPending[key];
+      console.warn('route detail failed for ' + key, err);
+      return null;
+    });
+  S.detailPending[key] = job;
+  return job;
 }
 
 /* Route geometry ships split into runs of one road rating; stitch them back
@@ -316,10 +347,15 @@ function selectStore(store, openSheet) {
   highlightMarker();
 
   var route = routeFor(store, S.profile);
-  if (route) {
-    renderDetail(store, route);
-  } else {
-    renderDetail(store, null);
+  renderDetail(store, route);           // stats land immediately from the index
+
+  if (route && !route.segments) {
+    loadDetail(store).then(function (doc) {
+      if (!S.selected || storeKey(S.selected) !== storeKey(store)) return;
+      if (doc) renderDetail(store, routeFor(store, S.profile));
+      else fetchLiveRoute(store, S.profile);
+    });
+  } else if (!route) {
     fetchLiveRoute(store, S.profile);
   }
 }
@@ -353,8 +389,16 @@ function renderDetail(store, route) {
   el.dArrive.textContent = fmtClock(secs);
 
   renderRoads(route);
-  renderSteps(route);
-  drawRoute(route);
+
+  if (route.segments || route.geometry) {
+    renderSteps(route);
+    drawRoute(route);
+  } else {
+    // Index-only so far: the road mix and times are real, the line is coming.
+    el.dStepCount.textContent = '';
+    el.dSteps.innerHTML = '<li><span class="step-main">Loading the route…</span></li>';
+    drawRoute(null);
+  }
 }
 
 function renderRoads(route) {
@@ -416,10 +460,39 @@ function renderSteps(route) {
 
 /* ------------------------------------------------------------ live routing */
 
+/* Upload a profile to BRouter and keep the id. Cached in localStorage so this
+ * costs one request per browser, not one per re-route. */
+function brouterProfileId(profile) {
+  var cacheKey = 'pbc.profile.' + profile;
+  var cached = null;
+  try { cached = localStorage.getItem(cacheKey); } catch (e) { /* private mode */ }
+  if (cached) return Promise.resolve(cached);
+
+  return fetch(PROFILE_FILES[profile])
+    .then(function (r) { if (!r.ok) throw new Error('profile ' + r.status); return r.text(); })
+    .then(function (body) {
+      return fetch(BROUTER + '/profile', {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body
+      });
+    })
+    .then(function (r) { if (!r.ok) throw new Error('upload ' + r.status); return r.json(); })
+    .then(function (doc) {
+      if (!doc.profileid) throw new Error('no profile id');
+      try { localStorage.setItem(cacheKey, doc.profileid); } catch (e) { /* ignore */ }
+      return doc.profileid;
+    })
+    .catch(function (err) {
+      // Stock profile is worse here, but a working route beats no route.
+      console.warn('custom profile unavailable, falling back', err);
+      return PROFILE_FALLBACK[profile] || 'trekking';
+    });
+}
+
 function fetchLiveRoute(store, profile, fromLat, fromLon) {
   var o = (fromLat != null) ? [fromLat, fromLon] : [S.start.lat, S.start.lon];
+  return brouterProfileId(profile).then(function (pid) {
   var url = BROUTER + '?lonlats=' + o[1] + ',' + o[0] + '|' + store.lon + ',' + store.lat +
-            '&profile=' + (PROFILE_NAMES[profile] || 'trekking') +
+            '&profile=' + pid +
             '&alternativeidx=0&format=geojson&timode=2';
   return fetch(url)
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -443,6 +516,7 @@ function fetchLiveRoute(store, profile, fromLat, fromLon) {
       console.warn('live route failed', err);
       return null;
     });
+  });
 }
 
 /* Turn a BRouter geojson response into the same shape as our baked routes. */
@@ -484,7 +558,7 @@ function parseBrouter(doc, store) {
 
   var CLASS = {
     cycleway: ['Bike path', 'great'], path: ['Path', 'great'],
-    footway: ['Sidewalk / footway', 'good'], pedestrian: ['Pedestrian street', 'good'],
+    footway: ['Sidewalk', 'good'], pedestrian: ['Pedestrian street', 'good'],
     track: ['Track', 'good'], living_street: ['Living street', 'great'],
     residential: ['Residential street', 'great'],
     service: ['Service road / parking aisle', 'good'],
@@ -771,8 +845,7 @@ function wire() {
     el.btnLayer.classList.toggle('is-on', S.showFar);
     drawMarkers();
     renderList();
-    toast(S.showFar ? 'Showing all Publix within 30 km — tap any for a live route.'
-                    : 'Showing district stores only.');
+    toast(S.showFar ? 'Showing every store in range.' : 'Showing the nearest stores.');
   });
 
   el.btnBack.addEventListener('click', showList);
@@ -821,10 +894,10 @@ function refresh() {
 
 /* -------------------------------------------------------------------- boot */
 
-function boot(storesDoc, routesDoc) {
+function boot(storesDoc, indexDoc) {
   S.stores = storesDoc.stores;
   S.start = storesDoc.start;
-  S.routes = routesDoc.routes;
+  S.routes = indexDoc.routes;
 
   S.imperial = localStorage.getItem('pbc.imperial') !== '0';
   S.paceKmh = +(localStorage.getItem('pbc.pace') || 16);
@@ -859,7 +932,7 @@ function boot(storesDoc, routesDoc) {
 
 Promise.all([
   fetch('data/stores.json').then(function (r) { return r.json(); }),
-  fetch('data/routes.json').then(function (r) { return r.json(); })
+  fetch('data/routes-index.json').then(function (r) { return r.json(); })
 ]).then(function (res) { boot(res[0], res[1]); })
   .catch(function (err) {
     document.body.insertAdjacentHTML('afterbegin',

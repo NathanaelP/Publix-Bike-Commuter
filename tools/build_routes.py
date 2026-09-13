@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 """Precompute bicycle routes from the home base to every district store.
 
-Routes come from BRouter (https://brouter.de), which routes on OpenStreetMap
-data using cycling-specific profiles. Two profiles are computed per store:
+Routes come from BRouter (https://brouter.de), using the two Florida profiles
+in tools/profiles/, which are uploaded to BRouter at build time:
 
-    balanced  (BRouter "trekking") - sensible mix of speed and road quality
-    quiet     (BRouter "safety")   - avoids fast traffic, even if longer
+    balanced  (florida-balanced) - sidewalks allowed and fairly priced
+    quiet     (florida-calm)     - sidewalks and paths strongly preferred
+
+The stock BRouter profiles are unusable here: they refuse any footway without an
+explicit bicycle tag, which is ~98% of the local sidewalk network, and answer by
+routing riders onto US-192. See tools/make_profiles.py.
 
 For each route we keep the geometry, distance, climb, BRouter's own duration,
 a turn-by-turn instruction list, and a breakdown of how many metres are spent
 on each class of road. That last one matters here: a route that saves five
 minutes by putting you on a 55 mph trunk road is not actually a better route.
 
+Output is split so the app stays quick on a phone: data/routes-index.json holds
+distances, durations and the road mix for every store (small, always loaded),
+while data/routes/<store>.json holds that store's geometry and turn list and is
+fetched only when the store is opened.
+
 Usage:
     python3 tools/build_routes.py              # all district stores
+    python3 tools/build_routes.py --resume     # continue an interrupted run
     python3 tools/build_routes.py --refs 1607 1431
 """
 import argparse
@@ -29,7 +39,12 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = ROOT / "tools" / ".cache"
 
 BROUTER = "https://brouter.de/brouter"
-PROFILES = {"balanced": "trekking", "quiet": "safety"}
+PROFILE_DIR = ROOT / "tools" / "profiles"
+
+# Our own profiles, uploaded to BRouter at build time. See tools/make_profiles.py
+# for why the stock ones are unusable here: they forbid untagged footways, which
+# is most of the sidewalk network in Osceola County.
+PROFILES = {"balanced": "florida-balanced", "quiet": "florida-calm"}
 
 # Be a good citizen on a free public routing service.
 REQUEST_DELAY_S = 1.5
@@ -58,7 +73,7 @@ COMMANDS = {
 ROAD_CLASSES = {
     "cycleway": ("Bike path", "great"),
     "path": ("Path", "great"),
-    "footway": ("Sidewalk / footway", "good"),
+    "footway": ("Sidewalk", "good"),
     "pedestrian": ("Pedestrian street", "good"),
     "track": ("Track", "good"),
     "living_street": ("Living street", "great"),
@@ -103,6 +118,27 @@ def get_json(url, timeout=90, tries=4):
     raise RuntimeError(f"request failed after {tries} tries: {last}")
 
 
+def upload_profiles():
+    """Register our .brf files with BRouter and return {label: profile id}."""
+    ids = {}
+    for label, name in PROFILES.items():
+        path = PROFILE_DIR / f"{name}.brf"
+        if not path.exists():
+            raise SystemExit(f"missing {path}; run tools/make_profiles.py first")
+        req = urllib.request.Request(
+            f"{BROUTER}/profile", data=path.read_bytes(),
+            headers={"User-Agent": "PublixBikeCommuter/1.0",
+                     "Content-Type": "text/plain"})
+        with urllib.request.urlopen(req, timeout=60) as fh:
+            doc = json.load(fh)
+        pid = doc.get("profileid")
+        if not pid:
+            raise SystemExit(f"BRouter rejected {name}: {doc}")
+        ids[label] = pid
+        print(f"  {label:8} {name} -> {pid}")
+    return ids
+
+
 def brouter(start, dest, profile):
     qs = urllib.parse.urlencode({
         "lonlats": f"{start[1]},{start[0]}|{dest[1]},{dest[0]}",
@@ -116,15 +152,55 @@ def brouter(start, dest, profile):
 
 # ---------------------------------------------------------------- road names
 
-def fetch_road_names(bbox):
-    """Named road geometry in the bbox, so turns can be described by street."""
+def fetch_road_names(bbox, tile=0.15, fetch=False):
+    """Named road geometry, so turns can be described by street.
+
+    Overpass is regularly too busy to serve a box this size, and street names
+    enrich the directions rather than being the point of them, so nothing is
+    looked up unless --fetch-names is passed: by default we use whatever is
+    already cached. A turn with no name still routes and still says "Turn
+    left"; it just does not say onto what.
+    """
     CACHE.mkdir(parents=True, exist_ok=True)
-    cached = CACHE / "roads.json"
+    roads = []
+    legacy = CACHE / "roads.json"
+    if legacy.exists():
+        roads.extend(json.load(open(legacy)))
+    for f in sorted(CACHE.glob("roads_*.json")):
+        try:
+            roads.extend(json.load(open(f)))
+        except Exception:  # noqa: BLE001 - ignore a half-written cache file
+            continue
+    if not fetch:
+        print(f"  using {len(roads)} cached named roads"
+              f" (pass --fetch-names to look up more)")
+        return roads
+
+    min_lat, min_lon, max_lat, max_lon = bbox
+    tiles = []
+    lat = min_lat
+    while lat < max_lat:
+        lon = min_lon
+        while lon < max_lon:
+            tiles.append((lat, lon, min(lat + tile, max_lat), min(lon + tile, max_lon)))
+            lon += tile
+        lat += tile
+    print(f"  street names over {len(tiles)} tiles")
+    for n, box in enumerate(tiles, 1):
+        got = fetch_road_tile(box, n, len(tiles))
+        roads.extend(got)
+    print(f"  {len(roads)} named road segments")
+    return roads
+
+
+def fetch_road_tile(bbox, n, total):
+    key = "roads_%.3f_%.3f_%.3f_%.3f.json" % bbox
+    cached = CACHE / key
     if cached.exists():
         return json.load(open(cached))
 
     query = (
-        "[out:json][timeout:300];"
+        "[out:json][timeout:120];"
         'way["highway"]["name"](%f,%f,%f,%f);' % bbox + "out geom;"
     )
     body = urllib.parse.urlencode({"data": query}).encode()
@@ -133,12 +209,12 @@ def fetch_road_names(bbox):
         "https://overpass-api.de/api/interpreter",
     ]
     for endpoint in endpoints:
-        for attempt in range(4):
+        for attempt in range(3):
             try:
                 req = urllib.request.Request(
                     endpoint, data=body,
                     headers={"User-Agent": "PublixBikeCommuter/1.0"})
-                with urllib.request.urlopen(req, timeout=300) as fh:
+                with urllib.request.urlopen(req, timeout=180) as fh:
                     raw = json.load(fh)
                 roads = [
                     {"name": el["tags"]["name"],
@@ -147,13 +223,11 @@ def fetch_road_names(bbox):
                     if el.get("geometry") and el.get("tags", {}).get("name")
                 ]
                 cached.write_text(json.dumps(roads))
-                print(f"  cached {len(roads)} named roads")
+                print(f"    tile {n}/{total}: {len(roads)} roads")
                 return roads
-            except Exception as exc:  # noqa: BLE001
-                print(f"  road-name fetch attempt {attempt + 1}: {exc}",
-                      file=sys.stderr)
-                time.sleep(2 ** attempt)
-    print("  WARNING: no street names available; directions will omit them",
+            except Exception:  # noqa: BLE001 - retry, then give the tile up
+                time.sleep(1.5 * (attempt + 1))
+    print(f"    tile {n}/{total}: unavailable, names skipped here",
           file=sys.stderr)
     return []
 
@@ -349,40 +423,60 @@ def simplify(coords, tol_deg=0.00002):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--refs", nargs="*", help="only these store numbers")
-    ap.add_argument("--all", action="store_true",
-                    help="route every store on the map, not just the district")
+    ap.add_argument("--limit", type=int, help="only the N nearest stores")
+    ap.add_argument("--resume", action="store_true",
+                    help="skip stores whose route file already exists")
+    ap.add_argument("--fetch-names", action="store_true",
+                    help="look up new street names from Overpass (slow, flaky)")
     args = ap.parse_args()
 
     stores_doc = json.load(open(ROOT / "data" / "stores.json"))
     start = (stores_doc["start"]["lat"], stores_doc["start"]["lon"])
-    targets = [s for s in stores_doc["stores"] if args.all or s["district"]]
+    targets = [s for s in stores_doc["stores"] if s["district"]]
     if args.refs:
         targets = [s for s in targets if s["ref"] in args.refs]
+    if args.limit:
+        targets = targets[:args.limit]
     if not targets:
         raise SystemExit("no stores matched")
 
+    print("registering routing profiles with BRouter...")
+    profile_ids = upload_profiles()
+
     lats = [start[0]] + [s["lat"] for s in targets]
     lons = [start[1]] + [s["lon"] for s in targets]
-    pad = 0.04
+    pad = 0.05
     bbox = (min(lats) - pad, min(lons) - pad, max(lats) + pad, max(lons) + pad)
-    print("fetching street names for turn directions...")
-    index = RoadIndex(fetch_road_names(bbox))
+    print("loading street names for turn directions...")
+    index = RoadIndex(fetch_road_names(bbox, fetch=args.fetch_names))
 
-    routes = {}
+    out_dir = ROOT / "data" / "routes"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    summary = {}
     for n, store in enumerate(targets, 1):
         key = store["ref"] or store["osm"].replace("/", "_")
-        print(f"[{n}/{len(targets)}] #{key} {store['branch'] or store['street']}")
-        entry = {}
-        for label, profile in PROFILES.items():
-            doc = brouter(start, (store["lat"], store["lon"]), profile)
+        dest_file = out_dir / f"{key}.json"
+        label_txt = f"[{n}/{len(targets)}] #{key} {store['branch'] or store['street']}"
+
+        if args.resume and dest_file.exists():
+            detail = json.load(open(dest_file))
+            summary[key] = {p: strip_detail(detail[p]) for p in PROFILES}
+            print(f"{label_txt} — cached")
+            continue
+
+        print(label_txt)
+        detail = {}
+        for label, _name in PROFILES.items():
+            doc = brouter(start, (store["lat"], store["lon"]), profile_ids[label])
             feat = doc["features"][0]
             props = feat["properties"]
             coords = [(round(c[0], 6), round(c[1], 6))
                       for c in feat["geometry"]["coordinates"]]
             dist_m = int(props["track-length"])
             dur_s = int(props["total-time"])
-            entry[label] = {
-                "profile": profile,
+            detail[label] = {
+                "profile": _name,
                 "distance_m": dist_m,
                 "duration_s": dur_s,
                 "ascend_m": int(props.get("filtered ascend") or 0),
@@ -392,23 +486,36 @@ def main():
                                     store["name"] or "the store"),
                 "segments": segment_runs(props, coords),
             }
-            pts = sum(len(s["coords"]) for s in entry[label]["segments"])
-            print(f"      {label:8} {dist_m/1000:5.2f} km  {dur_s//60:2}m{dur_s%60:02}s"
-                  f"  ({len(entry[label]['segments'])} runs, {pts} pts)")
+            pts = sum(len(s["coords"]) for s in detail[label]["segments"])
+            print(f"      {label:8} {dist_m/1000:6.2f} km  {dur_s//60:3}m{dur_s%60:02}s"
+                  f"  ({len(detail[label]['segments'])} runs, {pts} pts)")
             time.sleep(REQUEST_DELAY_S)
-        routes[key] = entry
 
-    out = {
+        dest_file.write_text(json.dumps(detail, separators=(",", ":")) + "\n")
+        summary[key] = {p: strip_detail(detail[p]) for p in PROFILES}
+
+    idx = {
         "start": stores_doc["start"],
         "profiles": PROFILES,
         "generated": time.strftime("%Y-%m-%d"),
         "attribution": "Routing by BRouter on OpenStreetMap data (ODbL)",
-        "routes": routes,
+        "routes": summary,
     }
-    path = ROOT / "data" / "routes.json"
-    path.write_text(json.dumps(out, separators=(",", ":")) + "\n")
-    print(f"\nwrote {path.relative_to(ROOT)} "
-          f"({path.stat().st_size / 1024:.0f} KB, {len(routes)} stores)")
+    idx_path = ROOT / "data" / "routes-index.json"
+    idx_path.write_text(json.dumps(idx, separators=(",", ":")) + "\n")
+
+    detail_bytes = sum(f.stat().st_size for f in out_dir.glob("*.json"))
+    print(f"\nwrote {idx_path.relative_to(ROOT)} "
+          f"({idx_path.stat().st_size / 1024:.0f} KB, {len(summary)} stores)")
+    print(f"wrote {out_dir.relative_to(ROOT)}/ "
+          f"({detail_bytes / 1024 / 1024:.1f} MB across {len(summary)} files)")
+
+
+def strip_detail(route):
+    """The list view needs times and the road mix, not geometry or turns."""
+    return {k: route[k] for k in
+            ("profile", "distance_m", "duration_s", "ascend_m",
+             "implied_kmh", "roads")}
 
 
 if __name__ == "__main__":

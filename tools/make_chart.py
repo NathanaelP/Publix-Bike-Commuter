@@ -45,7 +45,7 @@ def road_note(route):
 
 def main():
     stores = json.load(open(ROOT / "data" / "stores.json"))
-    routes = json.load(open(ROOT / "data" / "routes.json"))
+    routes = json.load(open(ROOT / "data" / "routes-index.json"))
     by_ref = {s["ref"] or s["osm"].replace("/", "_"): s for s in stores["stores"]}
 
     rows = []
@@ -58,10 +58,13 @@ def main():
 
     out = []
     out.append("# Bike routes from Club Cortile Circle\n")
-    out.append(f"Every Publix within {stores['district_radius_km']:.0f} km "
-               "(about 9 miles) straight-line of "
+    out.append(f"Every Publix within {stores['district_radius_km'] / 1.609344:.0f} miles "
+               "straight-line of "
                f"**{stores['start']['name']}, {stores['start']['city']}**, with "
                "a bicycle route to each.\n")
+    out.append("Routes prefer the sidewalk network where it exists — legal in "
+               "Florida under §316.2065 — rather than the trunk highways "
+               "BRouter's stock European profiles would put you on.\n")
     out.append("Times assume a steady **10 mph (16 km/h)** riding pace and come "
                "from BRouter's cycling model, which already accounts for turns, "
                "surfaces and stops. They do **not** include long waits at "
@@ -113,10 +116,12 @@ def main():
     out.append("Full directions for every store are in the app. Here is the "
                "closest one as a sample.\n")
     store, bal, _ = rows[0]
+    key = store["ref"] or store["osm"].replace("/", "_")
+    detail = json.load(open(ROOT / "data" / "routes" / f"{key}.json"))["balanced"]
     out.append(f"### #{store['ref']} {store['branch']} — "
                f"{bal['distance_m'] / MI:.1f} mi, "
                f"{fmt_time(scaled(bal, HEADLINE_KMH))}\n")
-    for step in bal["steps"]:
+    for step in detail["steps"]:
         onto = f" onto **{step['street']}**" if step["street"] else ""
         dist = (f"{step['from_prev_m'] / MI:.1f} mi"
                 if step["from_prev_m"] >= 400

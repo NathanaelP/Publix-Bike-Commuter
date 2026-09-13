@@ -5,7 +5,7 @@
   "lat": 28.328194,
   "lon": -81.464348
  },
- "district_radius_km": 15.0,
+ "district_radius_km": 48.28,
  "generated": "2026-09-13",
  "attribution": "Store directory \u00a9 Publix Super Markets; positions \u00a9 OpenStreetMap contributors (ODbL)",
  "stores": [
@@ -510,7 +510,7 @@
    ],
    "osm": "way/722997497",
    "crow_km": 15.43,
-   "district": false,
+   "district": true,
    "name": "#1625 Lake Nona Creekside"
   },
   {
@@ -534,7 +534,7 @@
    ],
    "osm": "node/2265500655",
    "crow_km": 16.22,
-   "district": false,
+   "district": true,
    "name": "#1396 Lakeside Village Center"
   },
   {
@@ -558,7 +558,7 @@
    ],
    "osm": "node/5503724440",
    "crow_km": 16.52,
-   "district": false,
+   "district": true,
    "name": "#1181 Village Shops at Bellalago"
   },
   {
@@ -582,7 +582,7 @@
    ],
    "osm": "node/4322548270",
    "crow_km": 16.8,
-   "district": false,
+   "district": true,
    "name": "#235 Publix Center Of St Cloud"
   },
   {
@@ -606,7 +606,7 @@
    ],
    "osm": "node/5845077461",
    "crow_km": 16.82,
-   "district": false,
+   "district": true,
    "name": "#770 Champions Gate Village Shopping Center"
   },
   {
@@ -630,7 +630,7 @@
    ],
    "osm": "node/7891789740",
    "crow_km": 18.38,
-   "district": false,
+   "district": true,
    "name": "#605 Publix Plaza At Millenia"
   },
   {
@@ -654,7 +654,7 @@
    ],
    "osm": "way/238143066",
    "crow_km": 18.59,
-   "district": false,
+   "district": true,
    "name": "#331 Kirkman Oaks Shopping Center"
   },
   {
@@ -678,7 +678,7 @@
    ],
    "osm": "node/8450963236",
    "crow_km": 18.63,
-   "district": false,
+   "district": true,
    "name": "#133 The Grove"
   },
   {
@@ -702,7 +702,7 @@
    ],
    "osm": "way/1314914793",
    "crow_km": 19.27,
-   "district": false,
+   "district": true,
    "name": "#1843 Publix at Waterleigh Village"
   },
   {
@@ -726,7 +726,7 @@
    ],
    "osm": "way/771949151",
    "crow_km": 19.84,
-   "district": false,
+   "district": true,
    "name": "#684 Publix at Summer Bay"
   },
   {
@@ -750,7 +750,7 @@
    ],
    "osm": "node/11879279026",
    "crow_km": 20.04,
-   "district": false,
+   "district": true,
    "name": "#1738 Champions Crossing"
   },
   {
@@ -774,7 +774,7 @@
    ],
    "osm": "node/2661568713",
    "crow_km": 20.04,
-   "district": false,
+   "district": true,
    "name": "#758 The Promenade"
   },
   {
@@ -798,7 +798,7 @@
    ],
    "osm": "node/721911955",
    "crow_km": 20.2,
-   "district": false,
+   "district": true,
    "name": "#879 Berry Town Center"
   },
   {
@@ -822,7 +822,7 @@
    ],
    "osm": "way/469237491",
    "crow_km": 20.22,
-   "district": false,
+   "district": true,
    "name": "#1106 Cornerstone at Summerport"
   },
   {
@@ -846,7 +846,7 @@
    ],
    "osm": "way/47515348",
    "crow_km": 20.85,
-   "district": false,
+   "district": true,
    "name": "#2022 Metro West Village"
   },
   {
@@ -870,7 +870,7 @@
    ],
    "osm": "way/932274736",
    "crow_km": 21.6,
-   "district": false,
+   "district": true,
    "name": "#830 Conway Crossing"
   },
   {
@@ -894,7 +894,7 @@
    ],
    "osm": "",
    "crow_km": 21.6,
-   "district": false,
+   "district": true,
    "name": "#2088 The Shoppes at Citrus Creek"
   },
   {
@@ -918,7 +918,7 @@
    ],
    "osm": "node/3644749023",
    "crow_km": 21.69,
-   "district": false,
+   "district": true,
    "name": "#1430 Lake Nona Plaza"
   },
   {
@@ -942,7 +942,7 @@
    ],
    "osm": "way/863839617",
    "crow_km": 21.85,
-   "district": false,
+   "district": true,
    "name": "#1754 Plaza Ecco"
   },
   {
@@ -966,7 +966,7 @@
    ],
    "osm": "way/406324421",
    "crow_km": 22.1,
-   "district": false,
+   "district": true,
    "name": "#436 The Market at Southside"
   },
   {
@@ -990,7 +990,7 @@
    ],
    "osm": "node/651218024",
    "crow_km": 22.13,
-   "district": false,
+   "district": true,
    "name": "#1216 Crosscreek Village"
   },
   {
@@ -1014,7 +1014,7 @@
    ],
    "osm": "node/3168115586",
    "crow_km": 22.58,
-   "district": false,
+   "district": true,
    "name": "#1357 Golden Eagle Village"
   },
   {
@@ -1038,7 +1038,7 @@
    ],
    "osm": "way/556383810",
    "crow_km": 22.8,
-   "district": false,
+   "district": true,
    "name": "#1567 Hamlin Cove"
   },
   {
@@ -1062,7 +1062,7 @@
    ],
    "osm": "node/12598717517",
    "crow_km": 23.32,
-   "district": false,
+   "district": true,
    "name": "#1850 Cornerstone at Narcoossee"
   },
   {
@@ -1086,7 +1086,7 @@
    ],
    "osm": "node/4322548177",
    "crow_km": 23.49,
-   "district": false,
+   "district": true,
    "name": "#1045 Narcoossee Shoppes"
   },
   {
@@ -1110,7 +1110,7 @@
    ],
    "osm": "node/7418278580",
    "crow_km": 23.77,
-   "district": false,
+   "district": true,
    "name": "#1167 St Charles Plaza"
   },
   {
@@ -1134,7 +1134,7 @@
    ],
    "osm": "way/314672912",
    "crow_km": 23.81,
-   "district": false,
+   "district": true,
    "name": "#886 Cornerstone at Lake Hart"
   },
   {
@@ -1158,7 +1158,7 @@
    ],
    "osm": "way/827225674",
    "crow_km": 24.53,
-   "district": false,
+   "district": true,
    "name": "#1501 Lake Fredrica Shopping Center"
   },
   {
@@ -1182,7 +1182,7 @@
    ],
    "osm": "node/943127958",
    "crow_km": 25.02,
-   "district": false,
+   "district": true,
    "name": "#1015 Vista Lakes Center"
   },
   {
@@ -1206,7 +1206,7 @@
    ],
    "osm": "node/943127931",
    "crow_km": 25.16,
-   "district": false,
+   "district": true,
    "name": "#692 Conway Plaza Shopping Center"
   },
   {
@@ -1230,7 +1230,7 @@
    ],
    "osm": "node/943127924",
    "crow_km": 25.37,
-   "district": false,
+   "district": true,
    "name": "#405 Good Homes Plaza"
   },
   {
@@ -1254,7 +1254,7 @@
    ],
    "osm": "node/2985580060",
    "crow_km": 25.42,
-   "district": false,
+   "district": true,
    "name": "#1131 The Paramount on Lake Eola"
   },
   {
@@ -1278,7 +1278,7 @@
    ],
    "osm": "way/736911088",
    "crow_km": 25.8,
-   "district": false,
+   "district": true,
    "name": "#1158 Stoneybrook West Village"
   },
   {
@@ -1302,7 +1302,7 @@
    ],
    "osm": "node/11873838517",
    "crow_km": 25.93,
-   "district": false,
+   "district": true,
    "name": "#1852 Shoppes at Storey Park"
   },
   {
@@ -1326,7 +1326,7 @@
    ],
    "osm": "node/12558997262",
    "crow_km": 26.65,
-   "district": false,
+   "district": true,
    "name": "#2041 Shops at The Grove"
   },
   {
@@ -1350,7 +1350,7 @@
    ],
    "osm": "node/8555577550",
    "crow_km": 26.91,
-   "district": false,
+   "district": true,
    "name": "#662 Publix at Colonialtown"
   },
   {
@@ -1374,7 +1374,7 @@
    ],
    "osm": "node/6910779275",
    "crow_km": 27.45,
-   "district": false,
+   "district": true,
    "name": "#881 West Point Commons"
   },
   {
@@ -1398,7 +1398,7 @@
    ],
    "osm": "node/11873838525",
    "crow_km": 27.84,
-   "district": false,
+   "district": true,
    "name": "#1845 Groves at College Park"
   },
   {
@@ -1422,7 +1422,7 @@
    ],
    "osm": "way/933600640",
    "crow_km": 27.89,
-   "district": false,
+   "district": true,
    "name": "#659 Publix at College Park"
   },
   {
@@ -1446,7 +1446,7 @@
    ],
    "osm": "node/943127943",
    "crow_km": 27.93,
-   "district": false,
+   "district": true,
    "name": "#761 Publix at Silver Crossing"
   },
   {
@@ -1470,7 +1470,7 @@
    ],
    "osm": "node/943127957",
    "crow_km": 29.72,
-   "district": false,
+   "district": true,
    "name": "#1048 Baldwin Park"
   },
   {
@@ -1494,7 +1494,7 @@
    ],
    "osm": "way/605921891",
    "crow_km": 29.83,
-   "district": false,
+   "district": true,
    "name": "#1122 Rio Pinar Plaza"
   },
   {
@@ -1518,8 +1518,1160 @@
    ],
    "osm": "node/943127975",
    "crow_km": 29.87,
-   "district": false,
+   "district": true,
    "name": "#1338 Curry Ford Square"
+  },
+  {
+   "ref": "1076",
+   "branch": "Haines City Mall",
+   "lat": 28.105337,
+   "lon": -81.638534,
+   "street": "617 US Highway 17 92 W",
+   "city": "Haines City",
+   "state": "FL",
+   "zip": "33844",
+   "phone": "8634190331",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/1874717806",
+   "crow_km": 30.09,
+   "district": true,
+   "name": "#1076 Haines City Mall"
+  },
+  {
+   "ref": "1388",
+   "branch": "Hollieanna Shopping Center",
+   "lat": 28.591602,
+   "lon": -81.366455,
+   "street": "741 S Orlando Ave",
+   "city": "Winter Park",
+   "state": "FL",
+   "zip": "32789",
+   "phone": "4076220302",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/943127981",
+   "crow_km": 30.81,
+   "district": true,
+   "name": "#1388 Hollieanna Shopping Center"
+  },
+  {
+   "ref": "763",
+   "branch": "Publix At Kings Ridge",
+   "lat": 28.501193,
+   "lon": -81.716708,
+   "street": "4351 S Highway 27",
+   "city": "Clermont",
+   "state": "FL",
+   "zip": "34711",
+   "phone": "3523944437",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/3168115727",
+   "crow_km": 31.29,
+   "district": true,
+   "name": "#763 Publix At Kings Ridge"
+  },
+  {
+   "ref": "1174",
+   "branch": "Fountains West",
+   "lat": 28.604473,
+   "lon": -81.549405,
+   "street": "301 West Rd",
+   "city": "Ocoee",
+   "state": "FL",
+   "zip": "34761",
+   "phone": "4076541356",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/943127969",
+   "crow_km": 31.83,
+   "district": true,
+   "name": "#1174 Fountains West"
+  },
+  {
+   "ref": "1488",
+   "branch": "Winter Park Village",
+   "lat": 28.600723,
+   "lon": -81.363253,
+   "street": "440 N Orlando Ave",
+   "city": "Winter Park",
+   "state": "FL",
+   "zip": "32789",
+   "phone": "4076441204",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/6680742129",
+   "crow_km": 31.87,
+   "district": true,
+   "name": "#1488 Winter Park Village"
+  },
+  {
+   "ref": "27",
+   "branch": "East Towne Center",
+   "lat": 28.548482,
+   "lon": -81.681001,
+   "street": "13900 County Road 455",
+   "city": "Clermont",
+   "state": "FL",
+   "zip": "34711",
+   "phone": "4078771545",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/3184295701",
+   "crow_km": 32.38,
+   "district": true,
+   "name": "#27 East Towne Center"
+  },
+  {
+   "ref": "1381",
+   "branch": "Aloma Shopping Center",
+   "lat": 28.602611,
+   "lon": -81.322028,
+   "street": "2295 Aloma Ave",
+   "city": "Winter Park",
+   "state": "FL",
+   "zip": "32792",
+   "phone": "4076713403",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/931898253",
+   "crow_km": 33.54,
+   "district": true,
+   "name": "#1381 Aloma Shopping Center"
+  },
+  {
+   "ref": "607",
+   "branch": "The Shoppes Of Eastwood",
+   "lat": 28.525907,
+   "lon": -81.193875,
+   "street": "1921 S Alafaya Trl",
+   "city": "Orlando",
+   "state": "FL",
+   "zip": "32828",
+   "phone": "4072773117",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/61376601",
+   "crow_km": 34.39,
+   "district": true,
+   "name": "#607 The Shoppes Of Eastwood"
+  },
+  {
+   "ref": "1387",
+   "branch": "University Plaza",
+   "lat": 28.598641,
+   "lon": -81.288767,
+   "street": "4000 N Goldenrod Rd",
+   "city": "Winter Park",
+   "state": "FL",
+   "zip": "32792",
+   "phone": "4076710211",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7432030949",
+   "crow_km": 34.63,
+   "district": true,
+   "name": "#1387 University Plaza"
+  },
+  {
+   "ref": "1070",
+   "branch": "Maitland Place",
+   "lat": 28.628812,
+   "lon": -81.362175,
+   "street": "242 N Orlando Ave",
+   "city": "Maitland",
+   "state": "FL",
+   "zip": "32751",
+   "phone": "4075990202",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/544457632",
+   "crow_km": 34.89,
+   "district": true,
+   "name": "#1070 Maitland Place"
+  },
+  {
+   "ref": "1751",
+   "branch": "Clermont Town Center",
+   "lat": 28.548962,
+   "lon": -81.724925,
+   "street": "1720 E Highway 50",
+   "city": "Clermont",
+   "state": "FL",
+   "zip": "34711",
+   "phone": "3522416177",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/10785896520",
+   "crow_km": 35.38,
+   "district": true,
+   "name": "#1751 Clermont Town Center"
+  },
+  {
+   "ref": "2121",
+   "branch": "The Shoppes at East Shore",
+   "lat": 28.639344,
+   "lon": -81.541302,
+   "street": "2411 Ocoee Apopka Rd",
+   "city": "Apopka",
+   "state": "FL",
+   "zip": "32703",
+   "phone": "4075534229",
+   "hours": "",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "",
+   "crow_km": 35.41,
+   "district": true,
+   "name": "#2121 The Shoppes at East Shore"
+  },
+  {
+   "ref": "442",
+   "branch": "Gateway Crossing",
+   "lat": 28.645292,
+   "lon": -81.411697,
+   "street": "851 S State Road 434",
+   "city": "Altamonte Springs",
+   "state": "FL",
+   "zip": "32714",
+   "phone": "4075221100",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/4582660669",
+   "crow_km": 35.63,
+   "district": true,
+   "name": "#442 Gateway Crossing"
+  },
+  {
+   "ref": "1285",
+   "branch": "Casselberry Commons",
+   "lat": 28.627325,
+   "lon": -81.319406,
+   "street": "1455 State Road 436 Ste 221",
+   "city": "Casselberry",
+   "state": "FL",
+   "zip": "32707",
+   "phone": "4076730162",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7432045716",
+   "crow_km": 36.15,
+   "district": true,
+   "name": "#1285 Casselberry Commons"
+  },
+  {
+   "ref": "1092",
+   "branch": "Publix at Avalon",
+   "lat": 28.514323,
+   "lon": -81.154465,
+   "street": "3400 Avalon Park East Blvd",
+   "city": "Orlando",
+   "state": "FL",
+   "zip": "32828",
+   "phone": "4072771043",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/309765734",
+   "crow_km": 36.7,
+   "district": true,
+   "name": "#1092 Publix at Avalon"
+  },
+  {
+   "ref": "1789",
+   "branch": "Suncrest Village",
+   "lat": 28.599015,
+   "lon": -81.242821,
+   "street": "10115 University Blvd",
+   "city": "Orlando",
+   "state": "FL",
+   "zip": "32817",
+   "phone": "4076810649",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/943128028",
+   "crow_km": 37.09,
+   "district": true,
+   "name": "#1789 Suncrest Village"
+  },
+  {
+   "ref": "1440",
+   "branch": "Town Park",
+   "lat": 28.567816,
+   "lon": -81.196261,
+   "street": "12231 E Colonial Dr",
+   "city": "Orlando",
+   "state": "FL",
+   "zip": "32826",
+   "phone": "4074821244",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/464451608",
+   "crow_km": 37.38,
+   "district": true,
+   "name": "#1440 Town Park"
+  },
+  {
+   "ref": "15",
+   "branch": "Citrus Tower Village",
+   "lat": 28.56595,
+   "lon": -81.741472,
+   "street": "250 Citrus Tower Blvd",
+   "city": "Clermont",
+   "state": "FL",
+   "zip": "34711",
+   "phone": "3522416670",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/5767259728",
+   "crow_km": 37.86,
+   "district": true,
+   "name": "#15 Citrus Tower Village"
+  },
+  {
+   "ref": "1295",
+   "branch": "Shoppes at Aloma Walk",
+   "lat": 28.620418,
+   "lon": -81.260951,
+   "street": "2871 Clayton Crossing Way Ste 1001",
+   "city": "Oviedo",
+   "state": "FL",
+   "zip": "32765",
+   "phone": "4076730829",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/1237659277",
+   "crow_km": 38.09,
+   "district": true,
+   "name": "#1295 Shoppes at Aloma Walk"
+  },
+  {
+   "ref": "742",
+   "branch": "Publix at Palm Springs Crossing",
+   "lat": 28.661901,
+   "lon": -81.374284,
+   "street": "482 E Altamonte Dr Ste 1005",
+   "city": "Altamonte Springs",
+   "state": "FL",
+   "zip": "32701",
+   "phone": "4072609973",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/8048333516",
+   "crow_km": 38.14,
+   "district": true,
+   "name": "#742 Publix at Palm Springs Crossing"
+  },
+  {
+   "ref": "227",
+   "branch": "Hunt Club Corners",
+   "lat": 28.671449,
+   "lon": -81.45136,
+   "street": "540 S Hunt Club Blvd",
+   "city": "Apopka",
+   "state": "FL",
+   "zip": "32703",
+   "phone": "4078625255",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/1088278387",
+   "crow_km": 38.19,
+   "district": true,
+   "name": "#227 Hunt Club Corners"
+  },
+  {
+   "ref": "1661",
+   "branch": "Palm Springs Center",
+   "lat": 28.665312,
+   "lon": -81.37307,
+   "street": "503 E Altamonte Dr",
+   "city": "Altamonte Springs",
+   "state": "FL",
+   "zip": "32701",
+   "phone": "3212077128",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/6519105119",
+   "crow_km": 38.53,
+   "district": true,
+   "name": "#1661 Palm Springs Center"
+  },
+  {
+   "ref": "1759",
+   "branch": "Hills Crossing",
+   "lat": 28.5918,
+   "lon": -81.720699,
+   "street": "1685 N Hancock Rd",
+   "city": "Minneola",
+   "state": "FL",
+   "zip": "34715",
+   "phone": "3522419002",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/9332459517",
+   "crow_km": 38.56,
+   "district": true,
+   "name": "#1759 Hills Crossing"
+  },
+  {
+   "ref": "1788",
+   "branch": "Publix at Lake Juliana",
+   "lat": 28.145606,
+   "lon": -81.800502,
+   "street": "775 Hwy 559",
+   "city": "Auburndale",
+   "state": "FL",
+   "zip": "33823",
+   "phone": "8639840510",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "",
+   "crow_km": 38.69,
+   "district": true,
+   "name": "#1788 Publix at Lake Juliana"
+  },
+  {
+   "ref": "2107",
+   "branch": "The Shoppes at Country Club",
+   "lat": 28.024414,
+   "lon": -81.663199,
+   "street": "4267 Dundee Rd",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33884",
+   "phone": "8632694836",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "",
+   "crow_km": 39.0,
+   "district": true,
+   "name": "#2107 The Shoppes at Country Club"
+  },
+  {
+   "ref": "1793",
+   "branch": "Oak Grove Shoppes",
+   "lat": 28.684109,
+   "lon": -81.416261,
+   "street": "1005 N State Rd 434 Ste 1020",
+   "city": "Altamonte Springs",
+   "state": "FL",
+   "zip": "32714",
+   "phone": "4075511423",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/1209086675",
+   "crow_km": 39.85,
+   "district": true,
+   "name": "#1793 Oak Grove Shoppes"
+  },
+  {
+   "ref": "796",
+   "branch": "Willa Springs Village",
+   "lat": 28.646449,
+   "lon": -81.269774,
+   "street": "5655 Red Bug Lake Rd",
+   "city": "Winter Springs",
+   "state": "FL",
+   "zip": "32708",
+   "phone": "4076950922",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/475295243",
+   "crow_km": 40.17,
+   "district": true,
+   "name": "#796 Willa Springs Village"
+  },
+  {
+   "ref": "1428",
+   "branch": "Springs Plaza",
+   "lat": 28.688421,
+   "lon": -81.404016,
+   "street": "2381 W State Road 434",
+   "city": "Longwood",
+   "state": "FL",
+   "zip": "32779",
+   "phone": "4078659847",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/794604190",
+   "crow_km": 40.49,
+   "district": true,
+   "name": "#1428 Springs Plaza"
+  },
+  {
+   "ref": "458",
+   "branch": "University Palms Shopping Center",
+   "lat": 28.613389,
+   "lon": -81.206212,
+   "street": "4250 Alafaya Trl Ste 148",
+   "city": "Oviedo",
+   "state": "FL",
+   "zip": "32765",
+   "phone": "4073669480",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/3777929943",
+   "crow_km": 40.53,
+   "district": true,
+   "name": "#458 University Palms Shopping Center"
+  },
+  {
+   "ref": "379",
+   "branch": "Casselberry Collection",
+   "lat": 28.678694,
+   "lon": -81.334037,
+   "street": "3385 S US Highway 17/92 Suite 181",
+   "city": "Casselberry",
+   "state": "FL",
+   "zip": "32707",
+   "phone": "4078312020",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/350953825",
+   "crow_km": 41.0,
+   "district": true,
+   "name": "#379 Casselberry Collection"
+  },
+  {
+   "ref": "897",
+   "branch": "Corner Lakes Plaza",
+   "lat": 28.56257,
+   "lon": -81.130823,
+   "street": "16825 E Colonial Dr",
+   "city": "Orlando",
+   "state": "FL",
+   "zip": "32820",
+   "phone": "4075680858",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/388362392",
+   "crow_km": 41.74,
+   "district": true,
+   "name": "#897 Corner Lakes Plaza"
+  },
+  {
+   "ref": "836",
+   "branch": "Publix at Northgate",
+   "lat": 28.034872,
+   "lon": -81.734454,
+   "street": "1395 6th St NW",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33881",
+   "phone": "8632998000",
+   "hours": "Daily 7am-9pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7418311276",
+   "crow_km": 42.01,
+   "district": true,
+   "name": "#836 Publix at Northgate"
+  },
+  {
+   "ref": "865",
+   "branch": "Shoppes of Sweetwater",
+   "lat": 28.706438,
+   "lon": -81.444471,
+   "street": "3883 Wekiva Springs Rd",
+   "city": "Longwood",
+   "state": "FL",
+   "zip": "32779",
+   "phone": "4077881804",
+   "hours": "Daily 7am-9pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7432093314",
+   "crow_km": 42.1,
+   "district": true,
+   "name": "#865 Shoppes of Sweetwater"
+  },
+  {
+   "ref": "501",
+   "branch": "Wekiva Plaza",
+   "lat": 28.707314,
+   "lon": -81.5076,
+   "street": "1545 Rock Springs Rd",
+   "city": "Apopka",
+   "state": "FL",
+   "zip": "32712",
+   "phone": "4078804040",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/943127997",
+   "crow_km": 42.37,
+   "district": true,
+   "name": "#501 Wekiva Plaza"
+  },
+  {
+   "ref": "2035",
+   "branch": "Mariana Acres",
+   "lat": 28.051891,
+   "lon": -81.769099,
+   "street": "1075 Brookstone Rd",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33881",
+   "phone": "8632694834",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "",
+   "crow_km": 42.85,
+   "district": true,
+   "name": "#2035 Mariana Acres"
+  },
+  {
+   "ref": "1168",
+   "branch": "Eagle Ridge Shoppes",
+   "lat": 28.559841,
+   "lon": -81.821382,
+   "street": "7975 State Road 50",
+   "city": "Groveland",
+   "state": "FL",
+   "zip": "34736",
+   "phone": "3524290233",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/2213258756",
+   "crow_km": 43.38,
+   "district": true,
+   "name": "#1168 Eagle Ridge Shoppes"
+  },
+  {
+   "ref": "448",
+   "branch": "Winter Haven Square",
+   "lat": 27.987124,
+   "lon": -81.686196,
+   "street": "6031 Cypress Gardens Blvd",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33884",
+   "phone": "8633241182",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/2836694236",
+   "crow_km": 43.72,
+   "district": true,
+   "name": "#448 Winter Haven Square"
+  },
+  {
+   "ref": "1204",
+   "branch": "Southeast Plaza Shopping Center",
+   "lat": 28.002754,
+   "lon": -81.716134,
+   "street": "884 Cypress Gardens Blvd",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33880",
+   "phone": "8632910312",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7418339506",
+   "crow_km": 43.8,
+   "district": true,
+   "name": "#1204 Southeast Plaza Shopping Center"
+  },
+  {
+   "ref": "97",
+   "branch": "Shoppes on the Ridge",
+   "lat": 27.958609,
+   "lon": -81.620819,
+   "street": "23965 Hwy 27",
+   "city": "Lake Wales",
+   "state": "FL",
+   "zip": "33859",
+   "phone": "8636761215",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7428270846",
+   "crow_km": 43.87,
+   "district": true,
+   "name": "#97 Shoppes on the Ridge"
+  },
+  {
+   "ref": "1889",
+   "branch": "Alafaya Square",
+   "lat": 28.650496,
+   "lon": -81.205135,
+   "street": "81 Alafaya Woods Blvd",
+   "city": "Oviedo",
+   "state": "FL",
+   "zip": "32765",
+   "phone": "4076034222",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/475289749",
+   "crow_km": 43.89,
+   "district": true,
+   "name": "#1889 Alafaya Square"
+  },
+  {
+   "ref": "1668",
+   "branch": "Longwood Hills Market",
+   "lat": 28.714401,
+   "lon": -81.357679,
+   "street": "675 Longwood Hills Rd Unit 1001",
+   "city": "Longwood",
+   "state": "FL",
+   "zip": "32750",
+   "phone": "3212073311",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/822787267",
+   "crow_km": 44.19,
+   "district": true,
+   "name": "#1668 Longwood Hills Market"
+  },
+  {
+   "ref": "493",
+   "branch": "Tuscawilla Bend Shopping Center",
+   "lat": 28.669365,
+   "lon": -81.225875,
+   "street": "2100 Winter Springs Blvd",
+   "city": "Oviedo",
+   "state": "FL",
+   "zip": "32765",
+   "phone": "4073669740",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7440197910",
+   "crow_km": 44.52,
+   "district": true,
+   "name": "#493 Tuscawilla Bend Shopping Center"
+  },
+  {
+   "ref": "2117",
+   "branch": "Publix at Thompson Nursery",
+   "lat": 27.960765,
+   "lon": -81.668243,
+   "street": "8710 W Lake Ruby Dr",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33884",
+   "phone": "8632694831",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "",
+   "crow_km": 45.48,
+   "district": true,
+   "name": "#2117 Publix at Thompson Nursery"
+  },
+  {
+   "ref": "62",
+   "branch": "Winter Springs Town Center",
+   "lat": 28.699213,
+   "lon": -81.263961,
+   "street": "1160 E State Road 434",
+   "city": "Winter Springs",
+   "state": "FL",
+   "zip": "32708",
+   "phone": "4073279725",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/2177617620",
+   "crow_km": 45.67,
+   "district": true,
+   "name": "#62 Winter Springs Town Center"
+  },
+  {
+   "ref": "675",
+   "branch": "Riverside Landings Shopping Center",
+   "lat": 28.661139,
+   "lon": -81.17841,
+   "street": "1801 E Broadway St",
+   "city": "Oviedo",
+   "state": "FL",
+   "zip": "32765",
+   "phone": "4079711774",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/475270714",
+   "crow_km": 46.38,
+   "district": true,
+   "name": "#675 Riverside Landings Shopping Center"
+  },
+  {
+   "ref": "425",
+   "branch": "Spirit Lake Crossing",
+   "lat": 28.005646,
+   "lon": -81.776746,
+   "street": "1090 Spirit Lake Rd",
+   "city": "Winter Haven",
+   "state": "FL",
+   "zip": "33880",
+   "phone": "8632933804",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "way/745044336",
+   "crow_km": 47.16,
+   "district": true,
+   "name": "#425 Spirit Lake Crossing"
+  },
+  {
+   "ref": "1559",
+   "branch": "Shoppes At Sterling Creek",
+   "lat": 28.646123,
+   "lon": -81.139272,
+   "street": "443 W CR 419 Ste 1001",
+   "city": "Oviedo",
+   "state": "FL",
+   "zip": "32766",
+   "phone": "4073664727",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7440151761",
+   "crow_km": 47.53,
+   "district": true,
+   "name": "#1559 Shoppes At Sterling Creek"
+  },
+  {
+   "ref": "698",
+   "branch": "Lake Mary Pointe",
+   "lat": 28.737674,
+   "lon": -81.304182,
+   "street": "601 Weldon Blvd",
+   "city": "Lake Mary",
+   "state": "FL",
+   "zip": "32746",
+   "phone": "4073217616",
+   "hours": "Daily 7am-10pm",
+   "departments": [
+    "Publix Bakery",
+    "Publix Deli",
+    "Produce",
+    "Seafood",
+    "Meat",
+    "Floral"
+   ],
+   "osm": "node/7440197909",
+   "crow_km": 48.15,
+   "district": true,
+   "name": "#698 Lake Mary Pointe"
   }
  ]
 }
