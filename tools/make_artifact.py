@@ -90,20 +90,32 @@ def view_bbox(stores, routes, stores_doc, pad=0.012):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--basemap", default=str(ROOT / "tools" / ".cache" / "basemap_raw.json"))
+    ap.add_argument("--count", type=int, default=30,
+                    help="how many of the nearest stores to embed (default 30)")
     args = ap.parse_args()
 
     stores_doc = json.load(open(ROOT / "data" / "stores.json"))
-    routes_doc = json.load(open(ROOT / "data" / "routes.json"))
+    routes_doc = json.load(open(ROOT / "data" / "routes-index.json"))
+    detail_dir = ROOT / "data" / "routes"
 
     by_key = {}
     for s in stores_doc["stores"]:
         by_key[s["ref"] or s["osm"].replace("/", "_")] = s
 
+    # The standalone file embeds everything, so it only carries the nearest
+    # stores; the app covers the full radius.
+    nearest = sorted(
+        (k for k in routes_doc["routes"] if k in by_key),
+        key=lambda k: routes_doc["routes"][k]["balanced"]["distance_m"],
+    )[:args.count]
+
     stores, routes = [], {}
-    for key, entry in routes_doc["routes"].items():
-        s = by_key.get(key)
-        if not s:
+    for key in nearest:
+        s = by_key[key]
+        detail_path = detail_dir / f"{key}.json"
+        if not detail_path.exists():
             continue
+        entry = json.load(open(detail_path))
         stores.append({
             "ref": s["ref"], "name": s["branch"], "street": s["street"],
             "city": s["city"], "zip": s["zip"], "phone": s["phone"],

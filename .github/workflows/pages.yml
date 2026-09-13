@@ -25,10 +25,25 @@ jobs:
 
       - name: Check the data files are valid
         run: |
-          python3 -c "import json; d=json.load(open('data/stores.json')); \
-            print(len(d['stores']), 'stores')"
-          python3 -c "import json; d=json.load(open('data/routes.json')); \
-            print(len(d['routes']), 'routes')"
+          python3 - <<'CHECK'
+          import json, pathlib, sys
+
+          stores = json.load(open('data/stores.json'))['stores']
+          index = json.load(open('data/routes-index.json'))['routes']
+          files = {p.stem for p in pathlib.Path('data/routes').glob('*.json')}
+          print(f"{len(stores)} stores, {len(index)} routed, {len(files)} route files")
+
+          # Every routed store must have the detail file the app fetches when
+          # you open it, or the store opens to a spinner that never resolves.
+          missing = sorted(set(index) - files)
+          if missing:
+              sys.exit(f"route files missing for: {', '.join(missing[:10])}")
+
+          for key, entry in index.items():
+              for profile in ('balanced', 'quiet'):
+                  if profile not in entry:
+                      sys.exit(f"{key}: no {profile} route")
+          CHECK
 
       # enablement only takes effect with a token that can administer the repo
       # (a PAT with `repo`, or an App with `administration:write`). The default

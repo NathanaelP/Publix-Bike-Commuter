@@ -33,8 +33,9 @@ START = (28.328194, -81.464348)
 START_NAME = "Club Cortile Circle"
 START_CITY = "Kissimmee, FL 34746"
 
-DISTRICT_RADIUS_KM = 15.0   # treated as the commutable district
-MAP_RADIUS_KM = 30.0        # still shown on the map, routable on demand
+# 30 miles, as asked for: every store in that radius gets a precomputed route.
+DISTRICT_RADIUS_KM = 48.28
+MAP_RADIUS_KM = 48.28
 
 PUBLIX_API = "https://services.publix.com/api/v1/storelocation"
 UA = ("Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 "
@@ -45,7 +46,7 @@ OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 ]
-OSM_BBOX = (27.95, -81.90, 28.70, -81.05)
+OSM_BBOX = (27.80, -82.10, 28.90, -80.85)
 
 
 def haversine_km(a, b):
@@ -62,7 +63,7 @@ def haversine_km(a, b):
 def probe_points():
     """The locator returns ~25 stores per query, so sweep a ring of probes."""
     pts = [START]
-    for radius_km, count in ((12.0, 6), (24.0, 8)):
+    for radius_km, count in ((16.0, 6), (32.0, 10), (46.0, 12)):
         for i in range(count):
             ang = 2 * math.pi * i / count
             dlat = radius_km / 111.32
