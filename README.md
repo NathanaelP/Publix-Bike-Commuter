@@ -37,9 +37,13 @@ The app is a PWA, so it installs from the browser — no Play Store, no sideload
 2. Open that URL in **Chrome on your Android phone**.
 3. Menu (⋮) → **Add to Home screen** / **Install app**.
 
-If the deploy fails with `Get Pages site failed`, the workflow could not enable
-Pages on its own — set it manually under **Settings → Pages → Source: GitHub
-Actions**, then re-run the workflow.
+If the deploy fails with **`Create Pages site failed. Error: Resource not
+accessible by integration`**, the workflow could not switch Pages on by itself:
+a workflow's `GITHUB_TOKEN` is allowed to publish to Pages but not to create the
+Pages site, which needs repository-admin rights. Set it once by hand under
+**Settings → Pages → Source: GitHub Actions**, then re-run the workflow from the
+Actions tab. Once the site exists, `enablement: true` simply finds it and every
+later push deploys on its own.
 
 It then launches full-screen with its own icon, keeps working offline, and can
 use GPS for navigation.

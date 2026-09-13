@@ -21,7 +21,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check the data files are valid
         run: |
@@ -30,13 +30,18 @@ jobs:
           python3 -c "import json; d=json.load(open('data/routes.json')); \
             print(len(d['routes']), 'routes')"
 
-      # enablement: true turns Pages on for the repo via the API on first run,
-      # so the deploy does not require someone to visit Settings first.
-      - uses: actions/configure-pages@v5
+      # enablement only takes effect with a token that can administer the repo
+      # (a PAT with `repo`, or an App with `administration:write`). The default
+      # GITHUB_TOKEN may publish to Pages but not create the Pages site, so with
+      # Pages still off this fails with "Resource not accessible by integration"
+      # and someone has to switch it on once under Settings -> Pages. It is left
+      # on so the run says plainly which step is missing, and so a fork that does
+      # supply such a token sets itself up.
+      - uses: actions/configure-pages@v6
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: .
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
