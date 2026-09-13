@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b7a3e">
+<meta name="description" content="Bike routes and travel times from Club Cortile Circle to every Publix in the Kissimmee district.">
+<title>Publix Bike Commuter</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div id="map" aria-label="Map of Publix stores and bike routes"></div>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="5.5" cy="17.5" r="3.2"/><circle cx="18.5" cy="17.5" r="3.2"/>
+        <path d="M5.5 17.5 10 8h4l4.5 9.5M10 8l-1.5-3H6"/>
+      </svg>
+      <div class="brand-text">
+        <strong>Publix Bike Commuter</strong>
+        <span id="startLabel">from Club Cortile Cir</span>
+      </div>
+    </div>
+    <button id="btnUnits" class="chip" type="button" title="Switch units">mi</button>
+  </div>
+  <div class="topbar-row">
+    <input id="search" class="search" type="search" placeholder="Search store # or plaza…"
+           autocomplete="off" aria-label="Search stores">
+  </div>
+</header>
+
+<div class="maptools">
+  <button id="btnLocate" class="iconbtn" type="button" title="Show my location" aria-label="Show my location">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button id="btnFit" class="iconbtn" type="button" title="Fit all stores" aria-label="Fit all stores">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+  <button id="btnLayer" class="iconbtn" type="button" title="Toggle stores beyond the district" aria-label="Toggle stores beyond the district">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5"/></svg>
+  </button>
+</div>
+
+<!-- Turn banner, shown only while navigating -->
+<div id="navBanner" class="navbanner" hidden aria-live="polite">
+  <div class="navbanner-main">
+    <svg id="navIcon" class="navbanner-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+    <div class="navbanner-text">
+      <div id="navDist" class="navbanner-dist">—</div>
+      <div id="navVerb" class="navbanner-verb">Getting your location…</div>
+    </div>
+  </div>
+  <div class="navbanner-foot">
+    <span id="navRemaining">—</span>
+    <button id="btnStopNav" class="btn btn-ghost btn-sm" type="button">End</button>
+  </div>
+</div>
+
+<!-- Bottom sheet -->
+<section id="sheet" class="sheet sheet-half" aria-label="Store details">
+  <button id="grab" class="grab" type="button" aria-label="Expand or collapse panel"><span></span></button>
+
+  <!-- List view -->
+  <div id="listView" class="sheet-body">
+    <div class="sheet-head">
+      <h1 class="sheet-title">District stores</h1>
+      <span id="listCount" class="muted"></span>
+    </div>
+    <p class="pace-row">
+      <label for="pace">Your pace</label>
+      <input id="pace" type="range" min="8" max="28" step="1" value="16">
+      <output id="paceOut" class="chip chip-static">10 mph</output>
+    </p>
+    <ul id="storeList" class="storelist"></ul>
+    <p class="credits">
+      Stores &amp; roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors ·
+      routing by <a href="https://brouter.de" target="_blank" rel="noopener">BRouter</a>
+    </p>
+  </div>
+
+  <!-- Detail view -->
+  <div id="detailView" class="sheet-body" hidden>
+    <button id="btnBack" class="backlink" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> All stores
+    </button>
+    <div class="sheet-head">
+      <h1 id="dStore" class="sheet-title">—</h1>
+    </div>
+    <p id="dAddr" class="muted addr"></p>
+
+    <div class="stats">
+      <div class="stat"><b id="dTime">—</b><span>ride time</span></div>
+      <div class="stat"><b id="dDist">—</b><span>distance</span></div>
+      <div class="stat"><b id="dArrive">—</b><span>arrive by</span></div>
+    </div>
+
+    <div class="seg" role="tablist" aria-label="Route type">
+      <button class="seg-btn is-on" data-profile="balanced" role="tab" type="button">Balanced</button>
+      <button class="seg-btn" data-profile="quiet" role="tab" type="button">Quieter roads</button>
+    </div>
+
+    <div class="actions">
+      <button id="btnNav" class="btn btn-primary" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg> Navigate
+      </button>
+      <button id="btnGmaps" class="btn" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Google Maps
+      </button>
+      <a id="btnCall" class="btn" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h3l2 5-2.5 1.5a11 11 0 005 5L14 12l5 2v3a2 2 0 01-2.2 2A16 16 0 013 5.2A2 2 0 015 3z"/></svg> Call</a>
+    </div>
+
+    <h2 class="subhead">What you're riding on</h2>
+    <div id="dRoadBar" class="roadbar" role="img"></div>
+    <ul id="dRoadLegend" class="legend"></ul>
+    <p id="dWarn" class="warn" hidden></p>
+
+    <h2 class="subhead">Directions <span id="dStepCount" class="muted"></span></h2>
+    <ol id="dSteps" class="steps"></ol>
+
+    <p id="dHours" class="credits"></p>
+  </div>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="vendor/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
