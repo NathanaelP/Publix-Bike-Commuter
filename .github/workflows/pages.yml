@@ -30,7 +30,11 @@ jobs:
           python3 -c "import json; d=json.load(open('data/routes.json')); \
             print(len(d['routes']), 'routes')"
 
+      # enablement: true turns Pages on for the repo via the API on first run,
+      # so the deploy does not require someone to visit Settings first.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

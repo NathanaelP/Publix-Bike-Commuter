@@ -31,10 +31,15 @@ offline-capable web app you can install on an Android phone.
 
 The app is a PWA, so it installs from the browser — no Play Store, no sideloading.
 
-1. Turn on GitHub Pages for this repo: **Settings → Pages → Source: GitHub
-   Actions**. The included workflow publishes on every push to `main`.
-2. Open the published URL in **Chrome on your Android phone**.
+1. Push to `main` (or run the **Deploy to GitHub Pages** workflow by hand from
+   the Actions tab). It turns Pages on for the repo itself and publishes; the
+   run's summary shows the published URL.
+2. Open that URL in **Chrome on your Android phone**.
 3. Menu (⋮) → **Add to Home screen** / **Install app**.
+
+If the deploy fails with `Get Pages site failed`, the workflow could not enable
+Pages on its own — set it manually under **Settings → Pages → Source: GitHub
+Actions**, then re-run the workflow.
 
 It then launches full-screen with its own icon, keeps working offline, and can
 use GPS for navigation.
