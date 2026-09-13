@@ -1,9 +1,10 @@
 /* Publix Bike Commuter — Leaflet map, precomputed BRouter routes, live GPS nav.
  *
- * Routes for district stores ship in data/routes.json so the app opens
- * instantly and works with no signal. Anything else (a store outside the
- * district, or a re-route once you are already rolling) is fetched live from
- * BRouter, which allows cross-origin requests.
+ * Route data is split so the app opens fast on a phone: data/routes-index.json
+ * carries every store's distance, duration and road mix and loads at boot,
+ * while data/routes/<store>.json carries that store's geometry and turn list
+ * and is fetched when the store is opened. A re-route once you are already
+ * rolling goes live to BRouter, which allows cross-origin requests.
  */
 'use strict';
 
