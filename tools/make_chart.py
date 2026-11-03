@@ -5,9 +5,10 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# 16 km/h (10 mph) is the table's headline pace; 20 km/h (12.5 mph) the brisk one.
-HEADLINE_KMH = 16
-BRISK_KMH = 20
+# The table's headline pace, and a brisk one, in mph. Exact: 10 mph is
+# 16.09 km/h, not the 16 the first version used.
+HEADLINE_MPH = 10
+BRISK_MPH = 12.5
 
 MI = 1609.344
 
@@ -18,9 +19,12 @@ def fmt_time(sec):
     return f"{h}h {m:02d}m" if h else f"{m} min"
 
 
-def scaled(route, kmh):
-    """BRouter's duration re-based to a chosen pace (see build_routes.py)."""
-    return route["duration_s"] * (route.get("implied_kmh") or 19) / kmh
+def ride_seconds(route, mph):
+    """Moving time at a steady pace: distance divided by speed, nothing more.
+
+    Same formula as the app's pace slider, so the chart and the app agree.
+    """
+    return route["distance_m"] / (mph * MI / 3600)
 
 
 def road_note(route):
@@ -65,11 +69,11 @@ def main():
     out.append("Routes prefer the sidewalk network where it exists — legal in "
                "Florida under §316.2065 — rather than the trunk highways "
                "BRouter's stock European profiles would put you on.\n")
-    out.append("Times assume a steady **10 mph (16 km/h)** riding pace and come "
-               "from BRouter's cycling model, which already accounts for turns, "
-               "surfaces and stops. They do **not** include long waits at "
-               "signalised intersections on the big arterials. The app has a "
-               "pace slider if 10 mph is not your speed.\n")
+    out.append("Times are **distance divided by a steady riding pace** — 10 mph "
+               "and 12.5 mph here — and nothing else: no allowance for waiting at "
+               "signals, which on the big arterials can add several minutes. "
+               "The app has a pace slider (5-18 mph in half-mph steps) if 10 mph "
+               "is not your speed.\n")
     out.append(f"_Generated {routes['generated']} · "
                "store directory © Publix Super Markets · "
                "routing and road data © OpenStreetMap contributors_\n")
@@ -81,8 +85,8 @@ def main():
         out.append(
             f"| **#{store['ref']}** | {store['branch']} | {store['city']} "
             f"| {bal['distance_m'] / MI:.1f} mi "
-            f"| {fmt_time(scaled(bal, HEADLINE_KMH))} "
-            f"| {fmt_time(scaled(bal, BRISK_KMH))} "
+            f"| {fmt_time(ride_seconds(bal, HEADLINE_MPH))} "
+            f"| {fmt_time(ride_seconds(bal, BRISK_MPH))} "
             f"| {road_note(bal)} |")
 
     out.append("\n## Quieter alternative\n")
@@ -93,7 +97,7 @@ def main():
     out.append("|---|---:|---:|---:|---|")
     for store, bal, q in rows:
         delta_m = q["distance_m"] - bal["distance_m"]
-        delta_t = scaled(q, HEADLINE_KMH) - scaled(bal, HEADLINE_KMH)
+        delta_t = ride_seconds(q, HEADLINE_MPH) - ride_seconds(bal, HEADLINE_MPH)
         bal_rough = sum(r["m"] for r in bal["roads"] if r["rating"] == "avoid")
         q_rough = sum(r["m"] for r in q["roads"] if r["rating"] == "avoid")
         if delta_m <= 250 and q_rough <= bal_rough:
@@ -108,7 +112,7 @@ def main():
             verdict = "judgement call"
         out.append(
             f"| **#{store['ref']}** | {q['distance_m'] / MI:.1f} mi "
-            f"| {fmt_time(scaled(q, HEADLINE_KMH))} "
+            f"| {fmt_time(ride_seconds(q, HEADLINE_MPH))} "
             f"| {'+' if delta_t >= 0 else ''}{round(delta_t / 60)} min "
             f"| {verdict} |")
 
@@ -120,7 +124,7 @@ def main():
     detail = json.load(open(ROOT / "data" / "routes" / f"{key}.json"))["balanced"]
     out.append(f"### #{store['ref']} {store['branch']} — "
                f"{bal['distance_m'] / MI:.1f} mi, "
-               f"{fmt_time(scaled(bal, HEADLINE_KMH))}\n")
+               f"{fmt_time(ride_seconds(bal, HEADLINE_MPH))}\n")
     for step in detail["steps"]:
         onto = f" onto **{step['street']}**" if step["street"] else ""
         dist = (f"{step['from_prev_m'] / MI:.1f} mi"

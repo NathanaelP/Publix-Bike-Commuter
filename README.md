@@ -23,7 +23,8 @@ here and a great deal safer. See [Why sidewalks](#why-sidewalks) below.
   bike path, residential, arterial, trunk highway — with the mileage and
   whether there's a bike lane. This is Florida; a five-minute saving that puts
   you on US‑192 with no shoulder is not a saving.
-- **Pace slider.** Times re-scale to how fast *you* actually ride.
+- **Pace slider.** Every time is route distance ÷ the pace you set, in half-mph
+  steps, so you can plan around how fast *you* actually ride.
 - **Turn-by-turn directions** with real street names.
 - **Navigate mode** follows your GPS, counts down to the next turn, and
   re-routes if you come off the line.
@@ -175,11 +176,23 @@ python3 tools/build_routes.py --refs 1607 1431 812 1194 707
 
 ## The travel times
 
-Durations come from BRouter's cycling model, which already accounts for turns,
-surfaces and gradient, then get re-scaled to the pace you pick in the app
-(default 10 mph / 16 km/h). They **exclude** long waits at signalised
-intersections — on routes that cross US‑192 or John Young Parkway, add a couple
-of minutes.
+Every time is **distance divided by your pace**, and nothing else:
+
+    ride time = route distance ÷ pace
+
+The pace slider runs 5–18 mph in half-mph steps (8–30 km/h in whole km/h steps
+when the units are set to km), and the number on the slider is the number used —
+10 mph is 10 mph, not a rounded 16 km/h. The same formula drives the list, the
+store detail, the "arrive by" clock and the live ETA while navigating, so they
+always agree.
+
+BRouter's own duration estimate is not used. At the pace you pick, it would
+cancel out of the sum anyway, and pretending it adds nuance about turns or
+surfaces would be false precision.
+
+It is **moving time**. It excludes waiting at signalised crossings — on routes
+that cross US‑192 or John Young Parkway, add a few minutes — and any stops you
+make along the way.
 
 Full chart of every store: **[docs/ROUTES.md](docs/ROUTES.md)**.
 

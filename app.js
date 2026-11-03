@@ -46,7 +46,7 @@ var S = {
   start: null,
   selected: null,
   profile: 'balanced',
-  paceKmh: 16,
+  paceKmh: 10 * 1.609344,      // always the speed actually used for every time shown
   imperial: true,
   showFar: false,
   navigating: false,
@@ -76,14 +76,50 @@ function fmtDistShort(m) {
 }
 
 function fmtDur(s) {
-  s = Math.max(0, Math.round(s));
-  var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  // Round to whole minutes first, then split into hours: splitting first let
+  // 1h 59m 40s round its minutes up to "1h 60m".
+  var mins = Math.max(1, Math.round(Math.max(0, s) / 60));
+  var h = Math.floor(mins / 60), m = mins % 60;
   if (h) return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
-  return Math.max(1, m) + ' min';
+  return mins + ' min';
 }
 
-function fmtSpeed(kmh) {
-  return S.imperial ? Math.round(kmh / 1.609344) + ' mph' : kmh + ' km/h';
+/* ------------------------------------------------------------------- pace
+ * The slider carries the number the rider reads, in the units on screen, so two
+ * neighbouring positions can never display the same speed. (It used to run in
+ * whole km/h under a label rounded to whole mph, and 8 of its 20 steps repeated
+ * the label of the step before while the time changed.) S.paceKmh is always the
+ * exact speed behind the label, and every time shown is derived from it. */
+var KMH_PER_MPH = 1.609344;
+var PACE_UNITS = {
+  imperial: { min: 5, max: 18, step: 0.5, name: 'mph',  toKmh: KMH_PER_MPH },
+  metric:   { min: 8, max: 30, step: 1,   name: 'km/h', toKmh: 1 }
+};
+
+function paceUnits() { return S.imperial ? PACE_UNITS.imperial : PACE_UNITS.metric; }
+
+function fmtPace(valueInUnits) {
+  return (Math.round(valueInUnits * 10) / 10) + ' ' + paceUnits().name;
+}
+
+/* Nearest slider position, in display units, for a speed in km/h. */
+function snapPace(kmh) {
+  var u = paceUnits();
+  var v = Math.round(kmh / u.toKmh / u.step) * u.step;
+  return Math.round(Math.min(u.max, Math.max(u.min, v)) * 100) / 100;
+}
+
+/* Point the slider, the label and S.paceKmh at one agreed value. */
+function syncPaceControl() {
+  var u = paceUnits();
+  el.pace.min = u.min; el.pace.max = u.max; el.pace.step = u.step;
+  var v = snapPace(S.paceKmh);
+  el.pace.value = v;
+  S.paceKmh = v * u.toKmh;
+  el.paceOut.textContent = fmtPace(v);
+  el.pace.setAttribute('aria-valuetext', fmtPace(v));
+  el.dTimeLbl.textContent = 'ride @ ' + fmtPace(v);
+  try { localStorage.setItem('pbc.pace', String(S.paceKmh)); } catch (e) { /* private mode */ }
 }
 
 function fmtClock(secFromNow) {
@@ -91,13 +127,14 @@ function fmtClock(secFromNow) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-/* Scale BRouter's own duration to the rider's chosen pace. BRouter's profiles
- * already account for turns, surfaces and climb, so scaling its estimate keeps
- * that nuance instead of replacing it with flat distance/speed. */
-function rideSeconds(route) {
-  var base = route.implied_kmh || 19;
-  return route.duration_s * (base / S.paceKmh);
+/* Moving time at the rider's pace: distance divided by speed, nothing else.
+ * One function for every time on screen — list, detail and the live ETA while
+ * navigating — so they cannot disagree. It does not include waits at signals. */
+function secondsFor(distanceM) {
+  return distanceM / (S.paceKmh * 1000 / 3600);
 }
+
+function rideSeconds(route) { return secondsFor(route.distance_m); }
 
 /* ---------------------------------------------------------------- geometry */
 
@@ -725,8 +762,12 @@ function onPosition(pos) {
   var paths = (STEP_ICONS[next.icon] || STEP_ICONS.straight).split('|');
   el.navIcon.innerHTML = paths.map(function (p) { return '<path d="' + p + '"/>'; }).join('');
 
-  var remainM = Math.max(0, (proj.totalM || route.distance_m) - proj.alongM);
-  var remainS = remainM / 1000 / S.paceKmh * 3600;
+  // Remaining distance as a share of the route's own stated distance, not a
+  // re-measurement of the simplified drawn line: at the start the banner then
+  // shows exactly the distance and time the detail view promised.
+  var share = proj.totalM ? Math.min(1, Math.max(0, 1 - proj.alongM / proj.totalM)) : 1;
+  var remainM = route.distance_m * share;
+  var remainS = secondsFor(remainM);
   el.navRemaining.textContent = fmtDistShort(remainM) + ' left · ' +
     fmtDur(remainS) + ' · arrive ' + fmtClock(remainS);
 
@@ -823,14 +864,13 @@ function wire() {
     S.imperial = !S.imperial;
     el.btnUnits.textContent = S.imperial ? 'mi' : 'km';
     localStorage.setItem('pbc.imperial', S.imperial ? '1' : '0');
-    el.paceOut.textContent = fmtSpeed(S.paceKmh);
+    syncPaceControl();       // re-snap to the nearest step in the new units
     refresh();
   });
 
   el.pace.addEventListener('input', function () {
-    S.paceKmh = +el.pace.value;
-    el.paceOut.textContent = fmtSpeed(S.paceKmh);
-    localStorage.setItem('pbc.pace', String(S.paceKmh));
+    S.paceKmh = (+el.pace.value) * paceUnits().toKmh;
+    syncPaceControl();
     refresh();
   });
 
@@ -901,20 +941,20 @@ function boot(storesDoc, indexDoc) {
   S.routes = indexDoc.routes;
 
   S.imperial = localStorage.getItem('pbc.imperial') !== '0';
-  S.paceKmh = +(localStorage.getItem('pbc.pace') || 16);
+  var savedPace = parseFloat(localStorage.getItem('pbc.pace'));
+  if (isFinite(savedPace) && savedPace > 0) S.paceKmh = savedPace;
   S.profile = localStorage.getItem('pbc.profile') || 'balanced';
 
   ['map', 'search', 'btnUnits', 'btnLocate', 'btnFit', 'btnLayer', 'sheet', 'grab',
    'listView', 'detailView', 'listCount', 'storeList', 'pace', 'paceOut', 'btnBack',
-   'dStore', 'dAddr', 'dTime', 'dDist', 'dArrive', 'dRoadBar', 'dRoadLegend', 'dWarn',
+   'dStore', 'dAddr', 'dTime', 'dTimeLbl', 'dDist', 'dArrive', 'dRoadBar', 'dRoadLegend', 'dWarn',
    'dSteps', 'dStepCount', 'dHours', 'btnNav', 'btnGmaps', 'btnCall', 'navBanner',
    'navIcon', 'navDist', 'navVerb', 'navRemaining', 'btnStopNav', 'toast', 'startLabel'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
 
   el.startLabel.textContent = 'from ' + S.start.name;
   el.btnUnits.textContent = S.imperial ? 'mi' : 'km';
-  el.pace.value = S.paceKmh;
-  el.paceOut.textContent = fmtSpeed(S.paceKmh);
+  syncPaceControl();
   [].forEach.call(document.querySelectorAll('.seg-btn'), function (b) {
     b.classList.toggle('is-on', b.dataset.profile === S.profile);
   });
