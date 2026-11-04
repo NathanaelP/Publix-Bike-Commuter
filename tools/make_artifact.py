@@ -127,7 +127,6 @@ def main():
             out[label] = {
                 "m": r["distance_m"],
                 "s": r["duration_s"],
-                "kmh": r["implied_kmh"],
                 "roads": [{"l": x["label"], "r": x["rating"], "m": x["m"],
                            "bl": x.get("bike_lane_m", 0)} for x in r["roads"]],
                 "steps": [{"v": x["verb"], "i": x["icon"], "st": x["street"],

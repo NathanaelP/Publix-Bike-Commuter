@@ -5,7 +5,7 @@
  * them (bounded), and live re-routing needs a connection. */
 'use strict';
 
-var VERSION = 'pbc-v2';
+var VERSION = 'pbc-v3';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
 var ROUTES = VERSION + '-routes';
