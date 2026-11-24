@@ -835,29 +835,46 @@ function cycleSheet() {
 }
 
 function wireSheetDrag() {
-  var startY = null, startH = 0;
+  var startY = null, startH = 0, pid = null;
+  function heightFor(y) {
+    return Math.min(window.innerHeight - 100, Math.max(90, startH - (y - startY)));
+  }
+  function finish(e, cancelled) {
+    if (startY == null || (pid != null && e.pointerId !== pid)) return;
+    var moved = cancelled ? 0 : Math.abs(e.clientY - startY);
+    var h = sheetPx();
+    startY = null; pid = null;
+    el.sheet.style.transition = '';
+    el.sheet.style.height = '';
+    if (cancelled) {
+      // Snap to the nearest stop rather than leaving the sheet stuck mid-drag.
+      var vh0 = window.innerHeight;
+      setSheet(h < vh0 * 0.28 ? 'peek' : h < vh0 * 0.66 ? 'half' : 'full');
+      return;
+    }
+    if (moved < 6) { cycleSheet(); return; }
+    var vh = window.innerHeight;
+    setSheet(h < vh * 0.28 ? 'peek' : h < vh * 0.66 ? 'half' : 'full');
+  }
   el.grab.addEventListener('pointerdown', function (e) {
-    startY = e.clientY; startH = sheetPx();
+    if (e.button !== undefined && e.button > 0) return;
+    e.preventDefault();
+    startY = e.clientY; startH = sheetPx(); pid = e.pointerId;
     el.sheet.style.transition = 'none';
-    el.grab.setPointerCapture(e.pointerId);
+    try { el.grab.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   });
   el.grab.addEventListener('pointermove', function (e) {
-    if (startY == null) return;
-    var h = Math.min(window.innerHeight - 100, Math.max(90, startH - (e.clientY - startY)));
+    if (startY == null || e.pointerId !== pid) return;
+    e.preventDefault();
+    var h = heightFor(e.clientY);
     el.sheet.style.height = h + 'px';
     document.documentElement.style.setProperty('--sheet-h', h + 'px');
   });
-  el.grab.addEventListener('pointerup', function (e) {
-    if (startY == null) return;
-    var moved = Math.abs(e.clientY - startY);
-    var h = sheetPx();
-    el.sheet.style.transition = '';
-    el.sheet.style.height = '';
-    if (moved < 6) { cycleSheet(); startY = null; return; }
-    var vh = window.innerHeight;
-    setSheet(h < vh * 0.28 ? 'peek' : h < vh * 0.66 ? 'half' : 'full');
-    startY = null;
-  });
+  el.grab.addEventListener('pointerup', function (e) { finish(e, false); });
+  el.grab.addEventListener('pointercancel', function (e) { finish(e, true); });
+  el.grab.addEventListener('lostpointercapture', function (e) { finish(e, true); });
+  // Taps are handled above; a keyboard press (click with detail 0) toggles here.
+  el.grab.addEventListener('click', function (e) { if (e.detail === 0) cycleSheet(); });
 }
 
 /* ------------------------------------------------------------------ toast */

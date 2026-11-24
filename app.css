@@ -225,11 +225,16 @@ body {
   flex: none;
   display: grid; place-items: center;
   width: 100%;
-  height: 26px;
+  height: 32px;
   padding: 0;
   border: 0;
   background: none;
   cursor: grab;
+  /* The sheet allows vertical panning; the handle must not, or the browser
+     claims the drag as a scroll after a few pixels and cancels it. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .grab span {
   width: 38px; height: 4px;
