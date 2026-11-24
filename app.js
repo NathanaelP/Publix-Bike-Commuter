@@ -692,7 +692,20 @@ function openInGoogleMaps(store, route) {
     }
     url += '&waypoints=' + encodeURIComponent(wp.join('|'));
   }
-  window.open(url, '_blank', 'noopener');
+  if (isNativeApp()) {
+    // Inside the Android app, a navigation to another site is handed to
+    // Android, which opens the Google Maps app. window.open is not reliable
+    // in a WebView, so navigate instead; the app page itself stays put.
+    window.location.href = url;
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
+}
+
+/* True inside the Android app built from apk/ (Capacitor injects this). */
+function isNativeApp() {
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform &&
+            window.Capacitor.isNativePlatform());
 }
 
 /* ------------------------------------------------------------- navigation */
@@ -964,7 +977,10 @@ function boot(storesDoc, indexDoc) {
   renderList();
   setSheet('half');
 
-  if ('serviceWorker' in navigator) {
+  // The Android app ships every file inside the APK, so a service worker adds
+  // nothing there, and its cache could keep serving an old app.js after the
+  // APK is updated. Only the website registers one.
+  if ('serviceWorker' in navigator && !isNativeApp()) {
     navigator.serviceWorker.register('sw.js').catch(function (e) {
       console.warn('service worker registration failed', e);
     });

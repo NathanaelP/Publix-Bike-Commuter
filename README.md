@@ -57,11 +57,35 @@ use GPS for navigation.
 > Location and install both require HTTPS. GitHub Pages provides it; opening
 > `index.html` off the filesystem will not work.
 
-### Want a real APK?
+### Android app (APK)
 
-Point [PWABuilder](https://www.pwabuilder.com/) at the published URL, or run
-[Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap), to wrap this
-manifest into a signed Android package. Nothing in the app needs to change.
+`apk/` wraps the web app as a real Android app with
+[Capacitor](https://capacitorjs.com). Every store, route and turn list is
+bundled inside the APK, so it works with no signal; only the map tiles and live
+re-routing need a connection.
+
+**Get it on your phone:** open the
+[android-latest release](https://github.com/NathanaelP/Publix-Bike-Commuter/releases/tag/android-latest)
+in Chrome on the phone, download `publix-bike.apk`, open it, and allow Chrome to
+install apps when Android asks. The `Build Android APK` workflow rebuilds it on
+every change to the app or its data.
+
+Inside the app, *Google Maps* opens the Google Maps app, *Call* opens the
+dialer, and *Navigate* asks for location permission the first time.
+
+The APK is signed with a throwaway debug key, which is fine for installing on
+your own phone. Each build machine has its own key, though, so if Android says
+"App not installed" when updating, uninstall the old copy first; you only lose
+your saved pace and units.
+
+Build it locally (needs Node 22+, Java 21 and the Android SDK in `ANDROID_HOME`):
+
+```bash
+cd apk && npm ci && npm run apk
+# -> apk/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+`tools/make_android_icons.mjs` regenerates the launcher icons and splash screen.
 
 ## Run it locally
 
