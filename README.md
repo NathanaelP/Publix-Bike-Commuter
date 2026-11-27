@@ -130,7 +130,7 @@ python3 tools/make_artifact.py    # rebuild the standalone map
 `build_routes.py --resume` continues an interrupted run.
 
 Street names are added by the app itself, from `data/streets.json`: the named
-roads within about a kilometre of any route, fetched from Overpass in small
+roads within about 500 m of any route, fetched from Overpass in small
 cached tiles by `build_streets.py`. Naming in the app, rather than at build
 time, is what lets live re-routes (BRouter returns no names) and the route home
 have names too, with or without signal. Each turn is named after what the route
