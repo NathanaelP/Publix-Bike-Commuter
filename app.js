@@ -668,7 +668,9 @@ function describeAt(track, m, untilM) {
            : /bike path/i.test(run.label) ? 'the bike path'
            : /service|parking/i.test(run.label) ? 'the service road'
            : 'the path';
-  return along ? kind + ' along ' + along.name : kind;
+  // A service road's nearest parallel name is usually a neighbouring drive,
+  // not the road it serves, so it is not named after one.
+  return along && kind !== 'the service road' ? kind + ' along ' + along.name : kind;
 }
 
 /* Name every step of a route, once (and again if the street data arrives
@@ -694,17 +696,60 @@ function nameRoute(route) {
     if (st.icon === 'arrive') { out.push(Object.assign({}, st)); return; }
     pos = track.locate(st.lon, st.lat, Math.max(0, pos - 5));
     var nextM = raw[i + 1] ? track.locate(raw[i + 1].lon, raw[i + 1].lat, pos) : track.total;
-    var name = STREETS ? describeAt(track, pos, Math.max(pos + 15, nextM)) : st.street;
+    // At a roundabout, name the road the route leaves on, not the ring.
+    var from = st.icon === 'roundabout' ? Math.min(pos + 40, Math.max(pos, nextM - 10)) : pos;
+    var name = STREETS ? describeAt(track, from, Math.max(from + 15, nextM)) : st.street;
     if (!name && st.street && !STREETS) name = st.street;
     var step = Object.assign({}, st, { street: name || null, stay: false });
+    if (st.icon === 'roundabout' && /^Enter the roundabout/.test(st.verb)) step.verb = 'Go through the roundabout';
     if (name && name === current) {
-      if (st.icon === 'straight' || st.icon === 'roundabout') return;   // nothing changes here
-      if (/slight|keep/i.test(st.icon + st.verb)) step.stay = true;
+      if (st.icon === 'straight') return;   // nothing changes here
+      if (st.icon === 'roundabout' || /slight|keep/i.test(st.icon + st.verb)) step.stay = true;
     }
     if (st.icon === 'straight' && !name && !current) return;
     if (name) current = name;
     out.push(step);
   });
+
+  // A turn followed within 15 m by "continue straight onto" a new name is a
+  // short connector (Interior Street, 11 m): name the turn after where it leads.
+  for (var c = 1; c < out.length - 1; c++) {
+    if (out[c + 1].icon === 'straight' && out[c + 1].street &&
+        out[c + 1].at_m - out[c].at_m < 15) {
+      out[c] = Object.assign({}, out[c], { street: out[c + 1].street, stay: false });
+      out.splice(c + 1, 1);
+    }
+  }
+
+  // A "continue straight" right before another instruction adds nothing.
+  out = out.filter(function (st, k) {
+    var next = out[k + 1];
+    return !(st.icon === 'straight' && !st.start && next && next.at_m - st.at_m < 30);
+  });
+
+  // "Bear left/right to stay on" in clusters is a sidewalk wiggling round a
+  // pole or a kerb, not a decision: drop those, keep a lone same-road fork.
+  out = out.filter(function (st, k) {
+    if (!st.stay || st.icon === 'roundabout') return true;
+    var prev = out[k - 1], next = out[k + 1];
+    return !((prev && !prev.start && st.at_m - prev.at_m < 40) ||
+             (next && next.icon !== 'arrive' && next.at_m - st.at_m < 40));
+  });
+
+  // A quick jog (an unnamed turn with another turn just after it) reads as one
+  // instruction: "Turn left, then turn right onto Seven Dwarfs Lane".
+  for (var j = 1; j < out.length - 1; j++) {
+    var a = out[j], b = out[j + 1];
+    if (b.icon === 'arrive' || a.icon === 'straight' || b.icon === 'straight') continue;
+    var gap = b.at_m - a.at_m;
+    var unnamed = !a.street || a.street === 'the service road';
+    if (!(gap <= 20 || (unnamed && gap <= 30))) continue;
+    out.splice(j, 2, Object.assign({}, a, {
+      verb: (unnamed ? a.verb : stepText(a, false)) + ', then ' +
+            b.verb.charAt(0).toLowerCase() + b.verb.slice(1),
+      street: b.street, stay: b.stay
+    }));
+  }
 
   // Re-measure the gaps after dropping steps.
   for (var k = 1; k < out.length; k++) out[k].from_prev_m = Math.max(0, out[k].at_m - out[k - 1].at_m);
