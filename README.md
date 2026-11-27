@@ -29,6 +29,10 @@ here and a great deal safer. See [Why sidewalks](#why-sidewalks) below.
 - **Navigate mode** follows your GPS, counts down to the next turn, and
   re-routes if you come off the line. The map turns so the way you're riding
   points up (tap the compass to switch to north-up), and the screen stays on.
+- **Go Home.** At a store, tap **Go Home** to navigate from that store back
+  home. It plans a fresh route (one-way streets differ on the way back); with no
+  signal it uses the saved route in reverse. Ending the trip returns the app to
+  its default, home → store.
 - **Hand off to Google Maps** at any point. It opens straight into one
   continuous bike trip to the store, with no stops along the way. Google picks
   its own bike route, which may differ a little from the planned one.

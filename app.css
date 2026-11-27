@@ -394,7 +394,8 @@ body {
   margin-bottom: 18px;
 }
 .actions .btn { white-space: nowrap; }
-#btnNav { grid-column: 1 / -1; }
+.actions .btn-home { color: var(--green); border-color: var(--green); }
+.btn:disabled { opacity: .55; cursor: progress; }
 
 .btn {
   flex: 1;

@@ -54,7 +54,9 @@ var S = {
   watchId: null,
   liveRoute: null,     // live re-route result, overrides the baked one
   sheet: 'half',
-  headingUp: true      // turn the map with the rider while navigating
+  headingUp: true,     // turn the map with the rider while navigating
+  trip: 'out',         // 'out' = home → store (the default), 'home' = store → home
+  homeRoute: null      // {key, profile, route} while a trip home is active
 };
 
 var map, layerRoute, layerHalo, markers = {}, meMarker, homeMarker;
@@ -378,6 +380,10 @@ function filterList(q) {
 /* ------------------------------------------------------------ detail view */
 
 function selectStore(store, openSheet) {
+  if (S.trip === 'home') {
+    if (S.navigating) stopNav();
+    endTripHome();
+  }
   S.selected = store;
   S.liveRoute = null;
   el.listView.hidden = true;
@@ -527,18 +533,24 @@ function brouterProfileId(profile) {
     });
 }
 
-function fetchLiveRoute(store, profile, fromLat, fromLon) {
-  var o = (fromLat != null) ? [fromLat, fromLon] : [S.start.lat, S.start.lon];
+/* One BRouter request between two points, parsed into our route shape.
+ * destName names the destination in the final "Arrive at …" step. */
+function brouterRoute(from, to, profile, destName) {
   return brouterProfileId(profile).then(function (pid) {
-  var url = BROUTER + '?lonlats=' + o[1] + ',' + o[0] + '|' + store.lon + ',' + store.lat +
-            '&profile=' + pid +
-            '&alternativeidx=0&format=geojson&timode=2';
-  return fetch(url)
+    var url = BROUTER + '?lonlats=' + from.lon + ',' + from.lat + '|' + to.lon + ',' + to.lat +
+              '&profile=' + pid + '&alternativeidx=0&format=geojson&timode=2';
+    return fetch(url);
+  })
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(function (doc) {
-      var route = parseBrouter(doc, store);
+    .then(function (doc) { return parseBrouter(doc, { name: destName }); });
+}
+
+function fetchLiveRoute(store, profile, fromLat, fromLon) {
+  var from = (fromLat != null) ? { lat: fromLat, lon: fromLon } : S.start;
+  return brouterRoute(from, store, profile, store.name)
+    .then(function (route) {
       S.liveRoute = { key: storeKey(store), route: route };
-      if (S.selected && storeKey(S.selected) === storeKey(store)) {
+      if (S.selected && storeKey(S.selected) === storeKey(store) && S.trip === 'out') {
         renderDetail(store, route);
         renderList();
       }
@@ -547,7 +559,7 @@ function fetchLiveRoute(store, profile, fromLat, fromLon) {
     .catch(function (err) {
       toast('Could not reach the routing service — ' +
             (navigator.onLine ? 'try again' : 'you appear to be offline') + '.');
-      if (S.selected && storeKey(S.selected) === storeKey(store)) {
+      if (S.selected && storeKey(S.selected) === storeKey(store) && S.trip === 'out') {
         el.dSteps.innerHTML = '<li><span class="step-main">No route available offline. ' +
           'Tap Google Maps, or connect and retry.</span></li>';
         el.dTime.textContent = '—'; el.dDist.textContent = '—'; el.dArrive.textContent = '—';
@@ -555,7 +567,104 @@ function fetchLiveRoute(store, profile, fromLat, fromLon) {
       console.warn('live route failed', err);
       return null;
     });
+}
+
+/* ------------------------------------------------------------- trip home */
+
+/* The route the rider is on right now: home → store by default, or store →
+ * home after "Go Home". */
+function activeRoute() {
+  if (!S.selected) return null;
+  if (S.trip === 'home') return S.homeRoute ? S.homeRoute.route : null;
+  return routeFor(S.selected, S.profile);
+}
+
+/* Plan the ride home. Normally a fresh BRouter route from the store (or from
+ * the rider, when re-routing), since one-way streets and turn restrictions
+ * make the trip home more than the trip out run backwards. With no signal,
+ * fall back to exactly that: the baked route reversed. */
+function planHome(store, fromLat, fromLon) {
+  var from = fromLat != null ? { lat: fromLat, lon: fromLon } : store;
+  return brouterRoute(from, S.start, S.profile, 'home')
+    .catch(function (err) {
+      console.warn('live route home failed', err);
+      if (fromLat != null) return null;     // a re-route; keep the current line
+      return loadDetail(store).then(function () {
+        var r = routeFor(store, S.profile);
+        if (!r || !r.geometry) return null;
+        toast('Offline — using your route here in reverse. Watch for one-way streets.');
+        return reverseRoute(r);
+      });
+    });
+}
+
+function goHome() {
+  var store = S.selected;
+  if (!store) return;
+  if (S.navigating) stopNav();
+  el.btnHome.disabled = true;
+  toast('Planning your route home…');
+  planHome(store).then(function (route) {
+    el.btnHome.disabled = false;
+    if (S.selected !== store) return;
+    if (!route) { toast('Could not plan a route home. Try Google Maps.'); return; }
+    S.trip = 'home';
+    S.homeRoute = { key: storeKey(store), profile: S.profile, route: route };
+    renderSelected();
+    startNav();
   });
+}
+
+/* Back to the default direction, home → store. */
+function endTripHome() {
+  if (S.trip !== 'home') return;
+  S.trip = 'out';
+  S.homeRoute = null;
+  renderSelected();
+}
+
+/* The saved route ridden backwards, for when there is no signal. Each turn
+ * happens at the same spot but mirrored, and it leads onto the street the
+ * trip out came from. */
+function reverseRoute(r) {
+  var MIRROR = { left: 'right', right: 'left', 'slight-left': 'slight-right',
+                 'slight-right': 'slight-left', 'sharp-left': 'sharp-right',
+                 'sharp-right': 'sharp-left' };
+  var total = r.distance_m;
+  var fwd = (r.steps || []).filter(function (st) { return st.icon !== 'arrive'; });
+  var steps = [], prev = 0;
+  for (var i = fwd.length - 1; i >= 0; i--) {
+    var st = fwd[i], at = Math.max(0, Math.round(total - st.at_m));
+    var verb = st.verb.replace(/\b(left|right)\b/g, function (w) {
+      return w === 'left' ? 'right' : 'left';
+    });
+    steps.push({ verb: verb, icon: MIRROR[st.icon] || st.icon,
+                 street: i > 0 ? fwd[i - 1].street : null,
+                 at_m: at, from_prev_m: at - prev, lat: st.lat, lon: st.lon });
+    prev = at;
+  }
+  steps.push({ verb: 'Arrive at home', icon: 'arrive', street: null, at_m: total,
+               from_prev_m: total - prev, lat: S.start.lat, lon: S.start.lon });
+  return {
+    profile: r.profile, distance_m: total, duration_s: r.duration_s,
+    ascend_m: r.ascend_m, implied_kmh: r.implied_kmh, roads: r.roads, steps: steps,
+    geometry: r.geometry.slice().reverse(),
+    segments: (r.segments || []).slice().reverse().map(function (sg) {
+      return { rating: sg.rating, label: sg.label, coords: sg.coords.slice().reverse() };
+    }),
+    reversed: true
+  };
+}
+
+/* Re-draw the detail panel for whichever trip is active. */
+function renderSelected() {
+  if (!S.selected) return;
+  var route = activeRoute();
+  if (route) renderDetail(S.selected, route);
+  if (S.trip === 'home') {
+    el.dStore.textContent = 'Home from ' + el.dStore.textContent;
+    el.dAddr.textContent = 'To ' + S.start.name;
+  }
 }
 
 /* Turn a BRouter geojson response into the same shape as our baked routes. */
@@ -679,9 +788,9 @@ function parseBrouter(doc, store) {
  * for "Next", and its URL scheme has no pass-through points. So send only the
  * destination, from wherever the phone is now, and start turn-by-turn right
  * away. Google then plans its own bike route, which may differ from ours. */
-function openInGoogleMaps(store) {
+function openInGoogleMaps(dest) {
   var url = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling' +
-            '&dir_action=navigate&destination=' + store.lat + ',' + store.lon;
+            '&dir_action=navigate&destination=' + dest.lat + ',' + dest.lon;
   if (isNativeApp()) {
     // Inside the Android app, a navigation to another site is handed to
     // Android, which opens the Google Maps app. window.open is not reliable
@@ -925,8 +1034,12 @@ function stopNav() {
   el.navBanner.hidden = true;
   el.sheet.classList.remove('has-nav');
   setSheet('half');
-  var r = S.selected && routeFor(S.selected, S.profile);
-  if (r) drawRoute(r);
+  if (S.trip === 'home') {
+    endTripHome();          // back to the default, home → store
+  } else {
+    var r = S.selected && routeFor(S.selected, S.profile);
+    if (r) drawRoute(r);
+  }
 }
 
 var lastReroute = 0;
@@ -937,8 +1050,8 @@ function onPosition(pos) {
   showMe();
   if (!S.navigating || !S.selected) return;
 
-  var route = routeFor(S.selected, S.profile);
-  if (!route) return;
+  var route = activeRoute();
+  if (!route || !route.geometry) return;
 
   var proj = projectOnRoute(route.geometry, S.me.lat, S.me.lon);
   updateHeading(pos, route, proj);
@@ -949,9 +1062,18 @@ function onPosition(pos) {
       Date.now() - lastReroute > 20000) {
     lastReroute = Date.now();
     el.navVerb.textContent = 'Off route — recalculating…';
-    fetchLiveRoute(S.selected, S.profile, S.me.lat, S.me.lon).then(function (r) {
-      if (r) { drawRoute(r); toast('Route updated from your position.'); }
-    });
+    if (S.trip === 'home') {
+      planHome(S.selected, S.me.lat, S.me.lon).then(function (r) {
+        if (!r || S.trip !== 'home') return;
+        S.homeRoute.route = r;
+        renderSelected();
+        toast('Route updated from your position.');
+      });
+    } else {
+      fetchLiveRoute(S.selected, S.profile, S.me.lat, S.me.lon).then(function (r) {
+        if (r) { drawRoute(r); toast('Route updated from your position.'); }
+      });
+    }
     return;
   }
 
@@ -978,7 +1100,7 @@ function onPosition(pos) {
 
   if (remainM < 40) {
     el.navDist.textContent = 'Arrived';
-    el.navVerb.textContent = S.selected.name;
+    el.navVerb.textContent = S.trip === 'home' ? 'Home' : S.selected.name;
   }
 }
 
@@ -1129,8 +1251,10 @@ function wire() {
   });
 
   el.btnNav.addEventListener('click', function () {
-    if (S.navigating) stopNav(); else startNav();
+    if (S.navigating) { stopNav(); return; }
+    startNav();
   });
+  el.btnHome.addEventListener('click', goHome);
   el.btnStopNav.addEventListener('click', stopNav);
   el.btnCompass.addEventListener('click', toggleHeadingUp);
   el.sheet.addEventListener('transitionend', layoutRotatedMap);
@@ -1139,7 +1263,7 @@ function wire() {
     if (S.navigating && document.visibilityState === 'visible') keepAwake(true);
   });
   el.btnGmaps.addEventListener('click', function () {
-    if (S.selected) openInGoogleMaps(S.selected);
+    if (S.selected) openInGoogleMaps(S.trip === 'home' ? S.start : S.selected);
   });
 
   wireSheetDrag();
@@ -1147,6 +1271,10 @@ function wire() {
 }
 
 function showList() {
+  if (S.trip === 'home') {
+    if (S.navigating) stopNav();
+    endTripHome();
+  }
   el.detailView.hidden = true;
   el.listView.hidden = false;
   S.selected = null;
@@ -1157,10 +1285,7 @@ function showList() {
 
 function refresh() {
   renderList();
-  if (S.selected) {
-    var r = routeFor(S.selected, S.profile);
-    if (r) renderDetail(S.selected, r);
-  }
+  if (S.selected) renderSelected();
 }
 
 /* -------------------------------------------------------------------- boot */
@@ -1181,7 +1306,7 @@ function boot(storesDoc, indexDoc) {
    'dStore', 'dAddr', 'dTime', 'dTimeLbl', 'dDist', 'dArrive', 'dRoadBar', 'dRoadLegend', 'dWarn',
    'dSteps', 'dStepCount', 'dHours', 'btnNav', 'btnGmaps', 'btnCall', 'navBanner',
    'navIcon', 'navDist', 'navVerb', 'navRemaining', 'btnStopNav', 'toast', 'startLabel',
-   'btnCompass', 'rotAttr'
+   'btnCompass', 'rotAttr', 'btnHome'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
 
   el.startLabel.textContent = 'from ' + S.start.name;
