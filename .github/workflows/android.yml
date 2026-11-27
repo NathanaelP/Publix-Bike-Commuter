@@ -1,0 +1,78 @@
+name: Build Android APK
+
+# Builds the Android app in apk/ and attaches it to the "android-latest" GitHub
+# Release, so the newest APK can be downloaded straight from a phone:
+#   https://github.com/NathanaelP/Publix-Bike-Commuter/releases/tag/android-latest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - app.js
+      - app.css
+      - manifest.webmanifest
+      - data/**
+      - profiles/**
+      - icons/**
+      - vendor/**
+      - apk/**
+      - .github/workflows/android.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to create the release and upload the APK to it
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apk
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Capacitor
+        run: npm ci
+
+      - name: Copy the web app into the Android project
+        run: npm run sync
+
+      # The run number becomes the app's version code, so each build is newer
+      # than the last and Android will install it as an update.
+      - name: Build the APK
+        working-directory: apk/android
+        run: |
+          ./gradlew assembleDebug --no-daemon \
+            -PversionCode=$((100 + ${{ github.run_number }})) \
+            -PversionName=1.${{ github.run_number }}
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/publix-bike.apk"
+
+      - name: Publish to the android-latest release
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Built from ${GITHUB_SHA::7} on $(date -u '+%Y-%m-%d %H:%M UTC'), version 1.${{ github.run_number }}.
+
+          On your phone: download publix-bike.apk below, open it, and allow your browser to install apps if Android asks."
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release edit android-latest --notes "$notes"
+          else
+            gh release create android-latest --target "$GITHUB_SHA" \
+              --title "Android app (latest build)" --notes "$notes"
+          fi
+          gh release upload android-latest publix-bike.apk --clobber

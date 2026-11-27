@@ -39,6 +39,9 @@
 </header>
 
 <div class="maptools">
+  <button id="btnCompass" class="iconbtn compass" type="button" hidden title="Heading up — tap for north up" aria-label="Heading up — tap for north up">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l4 9h-8z" fill="#d93025" stroke="#d93025"/><path d="M12 21l-4-9h8z" fill="currentColor"/></svg>
+  </button>
   <button id="btnLocate" class="iconbtn" type="button" title="Show my location" aria-label="Show my location">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
   </button>
@@ -64,6 +67,8 @@
     <button id="btnStopNav" class="btn btn-ghost btn-sm" type="button">End</button>
   </div>
 </div>
+
+<div id="rotAttr" class="rot-attr" hidden>© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></div>
 
 <!-- Bottom sheet -->
 <section id="sheet" class="sheet sheet-half" aria-label="Store details">
@@ -111,6 +116,9 @@
     <div class="actions">
       <button id="btnNav" class="btn btn-primary" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg> Navigate
+      </button>
+      <button id="btnHome" class="btn btn-home" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg> Go Home
       </button>
       <button id="btnGmaps" class="btn" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Google Maps

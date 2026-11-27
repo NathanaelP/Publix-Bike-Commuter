@@ -60,6 +60,8 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+[hidden] { display: none !important; }
+
 #map { position: fixed; inset: 0; background: var(--bg-2); }
 
 /* ------------------------------------------------------------------ topbar */
@@ -225,11 +227,16 @@ body {
   flex: none;
   display: grid; place-items: center;
   width: 100%;
-  height: 26px;
+  height: 32px;
   padding: 0;
   border: 0;
   background: none;
   cursor: grab;
+  /* The sheet allows vertical panning; the handle must not, or the browser
+     claims the drag as a scroll after a few pixels and cancels it. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .grab span {
   width: 38px; height: 4px;
@@ -387,7 +394,8 @@ body {
   margin-bottom: 18px;
 }
 .actions .btn { white-space: nowrap; }
-#btnNav { grid-column: 1 / -1; }
+.actions .btn-home { color: var(--green); border-color: var(--green); }
+.btn:disabled { opacity: .55; cursor: progress; }
 
 .btn {
   flex: 1;
@@ -523,13 +531,58 @@ body {
   font-size: 14px;
 }
 
+.me-wrap { position: relative; }
 .me-dot {
+  position: relative;
   width: 16px; height: 16px;
   border-radius: 50%;
   background: var(--route);
   border: 3px solid #fff;
   box-shadow: 0 0 0 6px rgba(21, 101, 216, .2), 0 1px 5px rgba(0, 0, 0, .4);
 }
+
+/* Heading arrow: a cone pointing the way the rider is moving. It is drawn in
+   map space, so on the heading-up map it points straight up the screen. */
+.me-head {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+  margin: -27px 0 0 -10px;
+  border: 10px solid transparent;
+  border-bottom: 19px solid var(--route);
+  border-top: 0;
+  transform-origin: 10px 27px;
+  opacity: 0;
+  transition: transform .5s linear;
+}
+.has-heading .me-head { opacity: .85; }
+
+/* ---------------------------------------------------- heading-up rotation */
+#map.is-rotated {
+  inset: auto;
+  transform-origin: 50% 50%;
+  transition: transform .6s linear;
+}
+#map.is-rotated .leaflet-control-attribution { display: none; }
+#map.is-rotated .store-pin,
+#map.is-rotated .home-pin {
+  transform: rotate(var(--map-unrot, 0deg));
+  transition: transform .6s linear;
+}
+#map.is-rotated .store-pin.is-sel { transform: rotate(var(--map-unrot, 0deg)) scale(1.18); }
+.rot-attr {
+  position: fixed;
+  left: 8px;
+  bottom: calc(var(--sheet-h, 50vh) + 6px);
+  z-index: 500;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .8);
+  color: #333;
+  font-size: 10px;
+}
+.rot-attr a { color: inherit; }
+.compass svg { transition: transform .6s linear; }
 
 /* ---------------------------------------------------------------- toast */
 

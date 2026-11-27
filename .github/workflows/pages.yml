@@ -43,6 +43,12 @@ jobs:
               for profile in ('balanced', 'quiet'):
                   if profile not in entry:
                       sys.exit(f"{key}: no {profile} route")
+
+          # Street names for turn directions (tools/build_streets.py).
+          streets = json.load(open('data/streets.json'))
+          if not streets['names'] or not streets['ways']:
+              sys.exit("data/streets.json is empty")
+          print(f"{len(streets['names'])} street names")
           CHECK
 
       # enablement only takes effect with a token that can administer the repo

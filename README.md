@@ -25,11 +25,19 @@ here and a great deal safer. See [Why sidewalks](#why-sidewalks) below.
   you on US‑192 with no shoulder is not a saving.
 - **Pace slider.** Every time is route distance ÷ the pace you set, in half-mph
   steps, so you can plan around how fast *you* actually ride.
-- **Turn-by-turn directions** with real street names.
+- **Turn-by-turn directions** with real street names, on every route: planned,
+  re-routed mid-ride, and the trip home. Sidewalks and crossings are named by the
+  road they follow or cross ("the sidewalk along US 192").
 - **Navigate mode** follows your GPS, counts down to the next turn, and
-  re-routes if you come off the line.
-- **Hand off to Google Maps** at any point, passing waypoints from the planned
-  route so Google follows roughly the same path.
+  re-routes if you come off the line. The map turns so the way you're riding
+  points up (tap the compass to switch to north-up), and the screen stays on.
+- **Go Home.** At a store, tap **Go Home** to navigate from that store back
+  home. It plans a fresh route (one-way streets differ on the way back); with no
+  signal it uses the saved route in reverse. Ending the trip returns the app to
+  its default, home → store.
+- **Hand off to Google Maps** at any point. It opens straight into one
+  continuous bike trip to the store, with no stops along the way. Google picks
+  its own bike route, which may differ a little from the planned one.
 - **Works with no signal.** All district routes, directions and store details
   are baked in; map tiles cache as you view them.
 
@@ -57,11 +65,35 @@ use GPS for navigation.
 > Location and install both require HTTPS. GitHub Pages provides it; opening
 > `index.html` off the filesystem will not work.
 
-### Want a real APK?
+### Android app (APK)
 
-Point [PWABuilder](https://www.pwabuilder.com/) at the published URL, or run
-[Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap), to wrap this
-manifest into a signed Android package. Nothing in the app needs to change.
+`apk/` wraps the web app as a real Android app with
+[Capacitor](https://capacitorjs.com). Every store, route and turn list is
+bundled inside the APK, so it works with no signal; only the map tiles and live
+re-routing need a connection.
+
+**Get it on your phone:** open the
+[android-latest release](https://github.com/NathanaelP/Publix-Bike-Commuter/releases/tag/android-latest)
+in Chrome on the phone, download `publix-bike.apk`, open it, and allow Chrome to
+install apps when Android asks. The `Build Android APK` workflow rebuilds it on
+every change to the app or its data.
+
+Inside the app, *Google Maps* opens the Google Maps app, *Call* opens the
+dialer, and *Navigate* asks for location permission the first time.
+
+The APK is signed with a throwaway debug key, which is fine for installing on
+your own phone. Each build machine has its own key, though, so if Android says
+"App not installed" when updating, uninstall the old copy first; you only lose
+your saved pace and units.
+
+Build it locally (needs Node 22+, Java 21 and the Android SDK in `ANDROID_HOME`):
+
+```bash
+cd apk && npm ci && npm run apk
+# -> apk/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+`tools/make_android_icons.mjs` regenerates the launcher icons and splash screen.
 
 ## Run it locally
 
@@ -90,14 +122,20 @@ Store data © Publix Super Markets. Map data © OpenStreetMap contributors, ODbL
 python3 tools/make_profiles.py    # regenerate routing profiles -> tools/profiles/
 python3 tools/fetch_stores.py     # refresh the store list  -> data/stores.json
 python3 tools/build_routes.py     # recompute every route   -> data/routes*
+python3 tools/build_streets.py    # street names for turns  -> data/streets.json
 python3 tools/make_chart.py       # rebuild the time chart  -> docs/ROUTES.md
 python3 tools/make_artifact.py    # rebuild the standalone map
 ```
 
-`build_routes.py --resume` continues an interrupted run. Street names for turn
-directions come from a local Overpass cache; `--fetch-names` looks up more, but
-Overpass is often too busy to serve an area this size, and a turn with no name
-still routes correctly — it just doesn't say what it turns onto.
+`build_routes.py --resume` continues an interrupted run.
+
+Street names are added by the app itself, from `data/streets.json`: the named
+roads within about 500 m of any route, fetched from Overpass in small
+cached tiles by `build_streets.py`. Naming in the app, rather than at build
+time, is what lets live re-routes (BRouter returns no names) and the route home
+have names too, with or without signal. Each turn is named after what the route
+rides on just past it, so a turn at a corner names the street you turn onto,
+not the one you leave.
 
 ### How the route data is laid out
 
@@ -107,9 +145,10 @@ still routes correctly — it just doesn't say what it turns onto.
 |---|---|---|
 | `data/stores.json` | every store's identity and position | at boot |
 | `data/routes-index.json` | distance, duration and road mix per store | at boot |
+| `data/streets.json` | named roads along the routes, for turn directions | just after boot |
 | `data/routes/<store>.json` | that store's geometry and turn list | when you open the store |
 
-The service worker precaches the first two and keeps each route file after its
+The service worker precaches the first three and keeps each route file after its
 first view, so a store you have opened stays available with no signal.
 
 `tools/make_icons.mjs` regenerates the app icons (needs `npm i playwright`).

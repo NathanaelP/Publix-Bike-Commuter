@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.nathanaelp.bikecommuter",
+  "appName": "Publix Bike",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

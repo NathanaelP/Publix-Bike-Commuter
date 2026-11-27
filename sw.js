@@ -5,7 +5,7 @@
  * them (bounded), and live re-routing needs a connection. */
 'use strict';
 
-var VERSION = 'pbc-v3';
+var VERSION = 'pbc-v7';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
 var ROUTES = VERSION + '-routes';
@@ -27,6 +27,7 @@ var SHELL_FILES = [
   'vendor/images/layers-2x.png',
   'data/stores.json',
   'data/routes-index.json',
+  'data/streets.json',
   'profiles/florida-balanced.brf',
   'profiles/florida-calm.brf',
   'icons/icon-192.png',
