@@ -655,7 +655,10 @@ function describeAt(track, m, untilM) {
   var top = Object.keys(votes).sort(function (a, b) { return votes[b] - votes[a]; })[0];
   if (top) return top;
 
-  if (!OFFROAD.test(run.label) && !/service|parking/i.test(run.label)) return null;
+  if (!OFFROAD.test(run.label) && !/service|parking/i.test(run.label)) {
+    // A road OpenStreetMap has no name for (plazas, campuses, new builds).
+    return /road|street|living/i.test(run.label) ? 'the unnamed road' : null;
+  }
   var mid = Math.min(run.to, m + 20), pm = track.pointAt(mid), bm = track.bearingAt(mid);
   var near = streetsNear(pm[0], pm[1], 40);
   // A short path across a road is a crosswalk.
@@ -670,7 +673,12 @@ function describeAt(track, m, untilM) {
            : 'the path';
   // A service road's nearest parallel name is usually a neighbouring drive,
   // not the road it serves, so it is not named after one.
-  return along && kind !== 'the service road' ? kind + ' along ' + along.name : kind;
+  if (kind === 'the service road') return kind;
+  if (along) return kind + ' along ' + along.name;
+  // No road alongside (a path through a park or a plaza): give the nearest
+  // named road as a landmark.
+  var landmark = streetsNear(pm[0], pm[1], 80)[0];
+  return landmark ? kind + ' near ' + landmark.name : kind;
 }
 
 /* Name every step of a route, once (and again if the street data arrives
@@ -702,6 +710,10 @@ function nameRoute(route) {
     if (!name && st.street && !STREETS) name = st.street;
     var step = Object.assign({}, st, { street: name || null, stay: false });
     if (st.icon === 'roundabout' && /^Enter the roundabout/.test(st.verb)) step.verb = 'Go through the roundabout';
+    // "the sidewalk near X" and "the sidewalk along X" are the same way on.
+    var sameWay = name && current &&
+      name.replace(/ (near|along) /, ' by ') === current.replace(/ (near|along) /, ' by ');
+    if (st.icon === 'straight' && sameWay) return;
     if (name && name === current) {
       if (st.icon === 'straight') return;   // nothing changes here
       if (st.icon === 'roundabout' || /slight|keep/i.test(st.icon + st.verb)) step.stay = true;
@@ -742,7 +754,7 @@ function nameRoute(route) {
     var a = out[j], b = out[j + 1];
     if (b.icon === 'arrive' || a.icon === 'straight' || b.icon === 'straight') continue;
     var gap = b.at_m - a.at_m;
-    var unnamed = !a.street || a.street === 'the service road';
+    var unnamed = !a.street || a.street === 'the service road' || a.street === 'the unnamed road';
     if (!(gap <= 20 || (unnamed && gap <= 30))) continue;
     out.splice(j, 2, Object.assign({}, a, {
       verb: (unnamed ? a.verb : stepText(a, false)) + ', then ' +

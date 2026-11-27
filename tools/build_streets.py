@@ -7,7 +7,7 @@ BRouter returns while riding (BRouter's output has no street names), and the
 reversed route home used offline. Shipping it keeps names working with no
 signal.
 
-Only roads within about a kilometre of a baked route are kept, which covers
+Only roads within about 500 m of a baked route are kept, which covers
 re-routes near the planned line while keeping the file small.
 
     python3 tools/build_streets.py            # uses cached tiles, fetches missing
@@ -30,7 +30,7 @@ OUT = ROOT / "data" / "streets.json"
 
 TILE = 0.05           # degrees per Overpass request
 CELL = 0.005          # corridor grid, ~500 m
-CORRIDOR_CELLS = 2    # keep roads within this many cells of a route (~1 km)
+CORRIDOR_CELLS = 1    # keep roads within this many cells of a route (~500 m)
 Q = 1e5               # coordinate quantisation: 1e-5 deg, about 1 m
 
 ENDPOINTS = [
