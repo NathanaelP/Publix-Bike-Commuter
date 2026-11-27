@@ -180,7 +180,7 @@ function routeFor(store, profile) {
   var full = S.detail[key] && S.detail[key][profile];
   if (full) {
     if (!full.geometry) full.geometry = joinSegments(full.segments);
-    return full;
+    return nameRoute(full);
   }
   var brief = S.routes[key];
   return brief ? brief[profile] : null;   // stats only; no geometry yet
@@ -491,16 +491,238 @@ function renderSteps(route) {
     var paths = (STEP_ICONS[s.icon] || STEP_ICONS.straight).split('|');
     var svg = '<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true">' +
       paths.map(function (p) { return '<path d="' + p + '"/>'; }).join('') + '</svg>';
-    var onto = s.street ? ' onto <b>' + escapeHtml(s.street) + '</b>' : '';
-    var verb = s.icon === 'arrive' || s.icon === 'straight'
-      ? escapeHtml(s.verb) + (s.street && s.icon === 'straight' ? ' on <b>' + escapeHtml(s.street) + '</b>' : '')
-      : escapeHtml(s.verb) + onto;
+    var verb = stepText(s, true);
     return '<li>' + svg + '<span class="step-main">' +
            '<span class="step-verb">' + verb + '</span><br>' +
-           '<span class="step-dist">' + fmtDist(s.from_prev_m) +
+           '<span class="step-dist">' + (s.start ? 'Start' : fmtDist(s.from_prev_m)) +
            (s.at_m ? ' · ' + fmtDistShort(s.at_m) + ' in' : '') + '</span>' +
            '</span></li>';
   }).join('');
+}
+
+/* ----------------------------------------------------------- street names */
+
+/* Street names for turns, for every route the app shows: baked, live
+ * re-routes (BRouter returns no names) and the reversed route home. They come
+ * from data/streets.json, the named roads along the district's routes
+ * (tools/build_streets.py), so they work offline too.
+ *
+ * A turn is named after what the route rides on just past it: a named road
+ * running the same way as the route, or, on a sidewalk or path, "the sidewalk
+ * along <road>". A short path across a road is "the crosswalk across <road>". */
+var STREETS = null;        // { names, cells: {"x,y": [[ax, ay, bx, by, nameIdx], ...]} }
+var STREET_CELL = 0.002;   // ~200 m
+
+function loadStreets() {
+  return fetch('data/streets.json')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (doc) {
+      var cells = {};
+      doc.ways.forEach(function (w) {
+        var name = w[0], f = w[1], x = f[0], y = f[1];
+        for (var i = 2; i < f.length; i += 2) {
+          var nx = x + f[i], ny = y + f[i + 1];
+          var seg = [x / 1e5, y / 1e5, nx / 1e5, ny / 1e5, name];
+          var x0 = Math.floor(Math.min(seg[0], seg[2]) / STREET_CELL),
+              x1 = Math.floor(Math.max(seg[0], seg[2]) / STREET_CELL),
+              y0 = Math.floor(Math.min(seg[1], seg[3]) / STREET_CELL),
+              y1 = Math.floor(Math.max(seg[1], seg[3]) / STREET_CELL);
+          for (var cx = x0; cx <= x1; cx++) {
+            for (var cy = y0; cy <= y1; cy++) {
+              (cells[cx + ',' + cy] || (cells[cx + ',' + cy] = [])).push(seg);
+            }
+          }
+          x = nx; y = ny;
+        }
+      });
+      STREETS = { names: doc.names, cells: cells };
+    })
+    .catch(function (err) { console.warn('street names unavailable', err); });
+}
+
+/* Named roads near a point: [{name, distM, bearing}] with the road's bearing
+ * at its closest point (0-180, since a road runs both ways). */
+function streetsNear(lon, lat, maxM) {
+  if (!STREETS) return [];
+  var kx = 111320 * Math.cos(lat * Math.PI / 180), ky = 110540;
+  var cx = Math.floor(lon / STREET_CELL), cy = Math.floor(lat / STREET_CELL);
+  var best = {};
+  for (var dx = -1; dx <= 1; dx++) {
+    for (var dy = -1; dy <= 1; dy++) {
+      (STREETS.cells[(cx + dx) + ',' + (cy + dy)] || []).forEach(function (g) {
+        var ax = (g[0] - lon) * kx, ay = (g[1] - lat) * ky;
+        var bx = (g[2] - lon) * kx, by = (g[3] - lat) * ky;
+        var vx = bx - ax, vy = by - ay, len2 = vx * vx + vy * vy;
+        var t = len2 ? Math.max(0, Math.min(1, -(ax * vx + ay * vy) / len2)) : 0;
+        var d = Math.hypot(ax + t * vx, ay + t * vy);
+        if (d > maxM) return;
+        var name = STREETS.names[g[4]];
+        if (!best[name] || d < best[name].distM) {
+          var brg = (Math.atan2(vx, vy) * 180 / Math.PI + 360) % 180;
+          best[name] = { name: name, distM: d, bearing: brg };
+        }
+      });
+    }
+  }
+  return Object.keys(best).map(function (k) { return best[k]; })
+    .sort(function (a, b) { return a.distM - b.distM; });
+}
+
+/* Angle between a route bearing (0-360) and a road bearing (0-180). */
+function axisDiff(routeBrg, roadBrg) {
+  var d = Math.abs(((routeBrg % 180) + 180) % 180 - roadBrg);
+  return Math.min(d, 180 - d);
+}
+
+/* Geometry helper for one route: cumulative distance and point/bearing at a
+ * distance along it, plus the way type (segment label) there. */
+function routeTrack(route) {
+  var g = route.geometry, cum = [0];
+  for (var i = 1; i < g.length; i++) {
+    cum.push(cum[i - 1] + metersBetween(g[i - 1][1], g[i - 1][0], g[i][1], g[i][0]));
+  }
+  var runs = [], at = 0;
+  (route.segments || []).forEach(function (sg) {
+    var len = 0;
+    for (var j = 1; j < sg.coords.length; j++) {
+      len += metersBetween(sg.coords[j - 1][1], sg.coords[j - 1][0], sg.coords[j][1], sg.coords[j][0]);
+    }
+    runs.push({ from: at, to: at + len, label: sg.label || '' });
+    at += len;
+  });
+  function idxAt(m) {
+    var lo = 0, hi = cum.length - 1;
+    while (lo < hi - 1) { var mid = (lo + hi) >> 1; if (cum[mid] <= m) lo = mid; else hi = mid; }
+    return lo;
+  }
+  return {
+    total: cum[cum.length - 1],
+    pointAt: function (m) {
+      m = Math.max(0, Math.min(cum[cum.length - 1], m));
+      var i = idxAt(m), seg = (cum[i + 1] - cum[i]) || 1, t = (m - cum[i]) / seg;
+      var a = g[i], b = g[Math.min(i + 1, g.length - 1)];
+      return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
+    },
+    bearingAt: function (m) {
+      var p = this.pointAt(m - 6), q = this.pointAt(m + 6);
+      var kx = 111320 * Math.cos(p[1] * Math.PI / 180);
+      return (Math.atan2((q[0] - p[0]) * kx, (q[1] - p[1]) * 110540) * 180 / Math.PI + 360) % 360;
+    },
+    runAt: function (m) {
+      for (var k = 0; k < runs.length; k++) if (m >= runs[k].from && m < runs[k].to) return runs[k];
+      return runs[runs.length - 1] || { from: 0, to: cum[cum.length - 1], label: '' };
+    },
+    // Where a point lies along the route, searching only from `fromM` on so a
+    // route that passes the same corner twice is matched in order.
+    locate: function (lon, lat, fromM) {
+      var bestD = Infinity, bestM = fromM;
+      var kx = 111320 * Math.cos(lat * Math.PI / 180), ky = 110540;
+      for (var i = Math.max(0, idxAt(fromM)); i < g.length - 1; i++) {
+        if (cum[i] > fromM + 3000 && bestD < 30) break;
+        var ax = (g[i][0] - lon) * kx, ay = (g[i][1] - lat) * ky;
+        var bx = (g[i + 1][0] - lon) * kx, by = (g[i + 1][1] - lat) * ky;
+        var vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy;
+        var t = l2 ? Math.max(0, Math.min(1, -(ax * vx + ay * vy) / l2)) : 0;
+        var d = Math.hypot(ax + t * vx, ay + t * vy);
+        if (d < bestD - 0.5) { bestD = d; bestM = cum[i] + t * (cum[i + 1] - cum[i]); }
+      }
+      return bestM;
+    }
+  };
+}
+
+var OFFROAD = /sidewalk|path|pedestrian|track|steps/i;
+
+/* What the route rides on from `m` metres on: a street name or a phrase like
+ * "the sidewalk along US 192". `untilM` caps how far ahead to look. */
+function describeAt(track, m, untilM) {
+  var run = track.runAt(m + 1);
+  var lookTo = Math.min(untilM, m + 45, track.total);
+  var votes = {}, samples = 0;
+  for (var d = m + 8; d <= lookTo; d += 9) {
+    var p = track.pointAt(d), brg = track.bearingAt(d);
+    samples++;
+    streetsNear(p[0], p[1], OFFROAD.test(run.label) ? 5 : 14).forEach(function (c) {
+      if (axisDiff(brg, c.bearing) < 28) votes[c.name] = (votes[c.name] || 0) + (14 - c.distM);
+    });
+  }
+  if (!samples) {
+    var p0 = track.pointAt(m + 4), b0 = track.bearingAt(m + 4);
+    streetsNear(p0[0], p0[1], OFFROAD.test(run.label) ? 5 : 14).forEach(function (c) {
+      if (axisDiff(b0, c.bearing) < 28) votes[c.name] = (votes[c.name] || 0) + (14 - c.distM);
+    });
+  }
+  var top = Object.keys(votes).sort(function (a, b) { return votes[b] - votes[a]; })[0];
+  if (top) return top;
+
+  if (!OFFROAD.test(run.label) && !/service|parking/i.test(run.label)) return null;
+  var mid = Math.min(run.to, m + 20), pm = track.pointAt(mid), bm = track.bearingAt(mid);
+  var near = streetsNear(pm[0], pm[1], 40);
+  // A short path across a road is a crosswalk.
+  if (OFFROAD.test(run.label) && run.to - run.from < 40) {
+    var across = near.filter(function (c) { return axisDiff(bm, c.bearing) > 55 && c.distM < 15; })[0];
+    if (across) return 'the crosswalk across ' + across.name;
+  }
+  var along = near.filter(function (c) { return axisDiff(bm, c.bearing) < 25; })[0];
+  var kind = /sidewalk/i.test(run.label) ? 'the sidewalk'
+           : /bike path/i.test(run.label) ? 'the bike path'
+           : /service|parking/i.test(run.label) ? 'the service road'
+           : 'the path';
+  return along ? kind + ' along ' + along.name : kind;
+}
+
+/* Name every step of a route, once (and again if the street data arrives
+ * later). Drops "continue straight" hints that do not change street, which
+ * BRouter emits wherever a way is split, and phrases a fork that keeps to the
+ * same road as "to stay on". */
+function nameRoute(route) {
+  if (!route || !route.geometry || route.geometry.length < 2 || !route.steps) return route;
+  if (route.namedWith === !!STREETS) return route;
+  if (!route.rawSteps) route.rawSteps = route.steps;
+  var track = routeTrack(route);
+  var raw = route.rawSteps, out = [], pos = 0, current = null;
+  var compass = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+
+  var firstStreet = describeAt(track, 0, raw[0] ? Math.max(20, raw[0].at_m) : 60);
+  current = firstStreet;
+  var head = compass[Math.round(track.bearingAt(10) / 45) % 8];
+  out.push({ verb: 'Head ' + head, icon: 'straight', street: firstStreet, along: true,
+             at_m: 0, from_prev_m: 0, lat: route.geometry[0][1], lon: route.geometry[0][0],
+             start: true });
+
+  raw.forEach(function (st, i) {
+    if (st.icon === 'arrive') { out.push(Object.assign({}, st)); return; }
+    pos = track.locate(st.lon, st.lat, Math.max(0, pos - 5));
+    var nextM = raw[i + 1] ? track.locate(raw[i + 1].lon, raw[i + 1].lat, pos) : track.total;
+    var name = STREETS ? describeAt(track, pos, Math.max(pos + 15, nextM)) : st.street;
+    if (!name && st.street && !STREETS) name = st.street;
+    var step = Object.assign({}, st, { street: name || null, stay: false });
+    if (name && name === current) {
+      if (st.icon === 'straight' || st.icon === 'roundabout') return;   // nothing changes here
+      if (/slight|keep/i.test(st.icon + st.verb)) step.stay = true;
+    }
+    if (st.icon === 'straight' && !name && !current) return;
+    if (name) current = name;
+    out.push(step);
+  });
+
+  // Re-measure the gaps after dropping steps.
+  for (var k = 1; k < out.length; k++) out[k].from_prev_m = Math.max(0, out[k].at_m - out[k - 1].at_m);
+  if (out.length > 1 && out[1].at_m < 15) out.shift();   // first turn is right at the start
+  route.steps = out;
+  route.namedWith = !!STREETS;
+  return route;
+}
+
+/* "Turn left onto Blake Boulevard", "Bear right to stay on US 192", "Head
+ * east on Club Cortile Circle". html escapes and bolds the street. */
+function stepText(s, html) {
+  var street = s.street ? (html ? '<b>' + escapeHtml(s.street) + '</b>' : s.street) : '';
+  var verb = html ? escapeHtml(s.verb) : s.verb;
+  if (!street || s.icon === 'arrive') return verb;
+  if (s.start || s.along) return verb + ' on ' + street;
+  if (s.stay) return verb + ' to stay on ' + street;
+  return verb + ' onto ' + street;
 }
 
 /* ------------------------------------------------------------ live routing */
@@ -575,7 +797,7 @@ function fetchLiveRoute(store, profile, fromLat, fromLon) {
  * home after "Go Home". */
 function activeRoute() {
   if (!S.selected) return null;
-  if (S.trip === 'home') return S.homeRoute ? S.homeRoute.route : null;
+  if (S.trip === 'home') return S.homeRoute ? nameRoute(S.homeRoute.route) : null;
   return routeFor(S.selected, S.profile);
 }
 
@@ -631,7 +853,7 @@ function reverseRoute(r) {
                  'slight-right': 'slight-left', 'sharp-left': 'sharp-right',
                  'sharp-right': 'sharp-left' };
   var total = r.distance_m;
-  var fwd = (r.steps || []).filter(function (st) { return st.icon !== 'arrive'; });
+  var fwd = (r.rawSteps || r.steps || []).filter(function (st) { return st.icon !== 'arrive'; });
   var steps = [], prev = 0;
   for (var i = fwd.length - 1; i >= 0; i--) {
     var st = fwd[i], at = Math.max(0, Math.round(total - st.at_m));
@@ -645,7 +867,7 @@ function reverseRoute(r) {
   }
   steps.push({ verb: 'Arrive at home', icon: 'arrive', street: null, at_m: total,
                from_prev_m: total - prev, lat: S.start.lat, lon: S.start.lon });
-  return {
+  var rev = {
     profile: r.profile, distance_m: total, duration_s: r.duration_s,
     ascend_m: r.ascend_m, implied_kmh: r.implied_kmh, roads: r.roads, steps: steps,
     geometry: r.geometry.slice().reverse(),
@@ -654,6 +876,7 @@ function reverseRoute(r) {
     }),
     reversed: true
   };
+  return nameRoute(rev);
 }
 
 /* Re-draw the detail panel for whichever trip is active. */
@@ -773,12 +996,12 @@ function parseBrouter(doc, store) {
   }
   if (!segments.length) segments = [{ rating: 'ok', label: 'Route', coords: coords }];
 
-  return {
+  return nameRoute({
     profile: 'live', distance_m: dist, duration_s: dur,
     ascend_m: parseInt(p['filtered ascend'] || 0, 10),
     implied_kmh: dur ? Math.round(dist / 1000 / (dur / 3600) * 10) / 10 : 19,
     roads: roads, steps: steps, segments: segments, geometry: coords
-  };
+  });
 }
 
 /* --------------------------------------------------------- Google Maps out */
@@ -1079,13 +1302,13 @@ function onPosition(pos) {
 
   var next = null;
   for (var i = 0; i < route.steps.length; i++) {
-    if (route.steps[i].at_m > proj.alongM + 8) { next = route.steps[i]; break; }
+    if (!route.steps[i].start && route.steps[i].at_m > proj.alongM + 8) { next = route.steps[i]; break; }
   }
   if (!next) next = route.steps[route.steps.length - 1];
 
   var toTurn = Math.max(0, next.at_m - proj.alongM);
   el.navDist.textContent = fmtDist(toTurn);
-  el.navVerb.textContent = next.verb + (next.street ? ' onto ' + next.street : '');
+  el.navVerb.textContent = stepText(next, false);
   var paths = (STEP_ICONS[next.icon] || STEP_ICONS.straight).split('|');
   el.navIcon.innerHTML = paths.map(function (p) { return '<path d="' + p + '"/>'; }).join('');
 
@@ -1318,6 +1541,8 @@ function boot(storesDoc, indexDoc) {
 
   initMap();
   wire();
+  // Street names for turns; re-render once they arrive (the app works without).
+  loadStreets().then(refresh);
   renderList();
   setSheet('half');
 

@@ -25,7 +25,9 @@ here and a great deal safer. See [Why sidewalks](#why-sidewalks) below.
   you on US‑192 with no shoulder is not a saving.
 - **Pace slider.** Every time is route distance ÷ the pace you set, in half-mph
   steps, so you can plan around how fast *you* actually ride.
-- **Turn-by-turn directions** with real street names.
+- **Turn-by-turn directions** with real street names, on every route: planned,
+  re-routed mid-ride, and the trip home. Sidewalks and crossings are named by the
+  road they follow or cross ("the sidewalk along US 192").
 - **Navigate mode** follows your GPS, counts down to the next turn, and
   re-routes if you come off the line. The map turns so the way you're riding
   points up (tap the compass to switch to north-up), and the screen stays on.
@@ -120,14 +122,20 @@ Store data © Publix Super Markets. Map data © OpenStreetMap contributors, ODbL
 python3 tools/make_profiles.py    # regenerate routing profiles -> tools/profiles/
 python3 tools/fetch_stores.py     # refresh the store list  -> data/stores.json
 python3 tools/build_routes.py     # recompute every route   -> data/routes*
+python3 tools/build_streets.py    # street names for turns  -> data/streets.json
 python3 tools/make_chart.py       # rebuild the time chart  -> docs/ROUTES.md
 python3 tools/make_artifact.py    # rebuild the standalone map
 ```
 
-`build_routes.py --resume` continues an interrupted run. Street names for turn
-directions come from a local Overpass cache; `--fetch-names` looks up more, but
-Overpass is often too busy to serve an area this size, and a turn with no name
-still routes correctly — it just doesn't say what it turns onto.
+`build_routes.py --resume` continues an interrupted run.
+
+Street names are added by the app itself, from `data/streets.json`: the named
+roads within about a kilometre of any route, fetched from Overpass in small
+cached tiles by `build_streets.py`. Naming in the app, rather than at build
+time, is what lets live re-routes (BRouter returns no names) and the route home
+have names too, with or without signal. Each turn is named after what the route
+rides on just past it, so a turn at a corner names the street you turn onto,
+not the one you leave.
 
 ### How the route data is laid out
 
@@ -137,9 +145,10 @@ still routes correctly — it just doesn't say what it turns onto.
 |---|---|---|
 | `data/stores.json` | every store's identity and position | at boot |
 | `data/routes-index.json` | distance, duration and road mix per store | at boot |
+| `data/streets.json` | named roads along the routes, for turn directions | just after boot |
 | `data/routes/<store>.json` | that store's geometry and turn list | when you open the store |
 
-The service worker precaches the first two and keeps each route file after its
+The service worker precaches the first three and keeps each route file after its
 first view, so a store you have opened stays available with no signal.
 
 `tools/make_icons.mjs` regenerates the app icons (needs `npm i playwright`).
