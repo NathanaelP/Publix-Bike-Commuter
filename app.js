@@ -53,7 +53,8 @@ var S = {
   me: null,            // {lat, lon, accuracy}
   watchId: null,
   liveRoute: null,     // live re-route result, overrides the baked one
-  sheet: 'half'
+  sheet: 'half',
+  headingUp: true      // turn the map with the rider while navigating
 };
 
 var map, layerRoute, layerHalo, markers = {}, meMarker, homeMarker;
@@ -673,25 +674,14 @@ function parseBrouter(doc, store) {
 
 /* --------------------------------------------------------- Google Maps out */
 
-/* Hand the route to Google Maps. Sampling a few of our own turn points as
- * waypoints nudges Google onto roughly the path we planned rather than letting
- * it pick its own. */
-function openInGoogleMaps(store, route) {
-  var dest = store.lat + ',' + store.lon;
-  var origin = S.navigating && S.me
-    ? S.me.lat.toFixed(6) + ',' + S.me.lon.toFixed(6)
-    : S.start.lat + ',' + S.start.lon;
+/* Hand the trip to Google Maps as one continuous ride. Google treats every
+ * entry in a waypoints list as a stop: it ends guidance at each one and waits
+ * for "Next", and its URL scheme has no pass-through points. So send only the
+ * destination, from wherever the phone is now, and start turn-by-turn right
+ * away. Google then plans its own bike route, which may differ from ours. */
+function openInGoogleMaps(store) {
   var url = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling' +
-            '&origin=' + origin + '&destination=' + dest;
-
-  if (route && route.geometry && route.geometry.length > 12) {
-    var g = route.geometry, want = 6, wp = [];
-    for (var i = 1; i <= want; i++) {
-      var c = g[Math.round(i * (g.length - 1) / (want + 1))];
-      wp.push(c[1].toFixed(5) + ',' + c[0].toFixed(5));
-    }
-    url += '&waypoints=' + encodeURIComponent(wp.join('|'));
-  }
+            '&dir_action=navigate&destination=' + store.lat + ',' + store.lon;
   if (isNativeApp()) {
     // Inside the Android app, a navigation to another site is handed to
     // Android, which opens the Google Maps app. window.open is not reliable
@@ -708,6 +698,198 @@ function isNativeApp() {
             window.Capacitor.isNativePlatform());
 }
 
+/* ------------------------------------------------------------ keep awake */
+
+/* Keep the screen on while navigating, as Google Maps does. In the Android
+ * app this is the KeepAwake plugin in apk/ (the WebView has no Wake Lock API);
+ * on the website it is the Screen Wake Lock API, which the browser drops
+ * whenever the page is hidden, so it is re-requested when the page returns. */
+var keepAwakePlugin = null, wakeSentinel = null;
+
+function keepAwake(on) {
+  if (isNativeApp() && window.Capacitor.registerPlugin) {
+    try {
+      if (!keepAwakePlugin) keepAwakePlugin = window.Capacitor.registerPlugin('KeepAwake');
+      (on ? keepAwakePlugin.keepAwake() : keepAwakePlugin.allowSleep())
+        .catch(function () { webWakeLock(on); });   // an APK built before the plugin
+      return;
+    } catch (e) { /* fall through to the web API */ }
+  }
+  webWakeLock(on);
+}
+
+function webWakeLock(on) {
+  if (!on) {
+    if (wakeSentinel) { wakeSentinel.release().catch(function () {}); wakeSentinel = null; }
+    return;
+  }
+  if (!navigator.wakeLock || wakeSentinel) return;
+  navigator.wakeLock.request('screen').then(function (sentinel) {
+    wakeSentinel = sentinel;
+    sentinel.addEventListener('release', function () {
+      if (wakeSentinel === sentinel) wakeSentinel = null;
+    });
+  }).catch(function () { /* not allowed right now (e.g. battery saver) */ });
+}
+
+/* ------------------------------------------------------- heading-up map */
+
+/* While navigating, the map turns so the direction of travel points up, like
+ * Google Maps. Leaflet cannot rotate, so the map element itself is rotated:
+ * it is made a square big enough to cover the screen at any angle, centred on
+ * the spot where the rider's dot should sit (in the lower part of the open
+ * map, so more of the road ahead is visible), and the map is kept centred on
+ * the rider. Labels on the pins are turned back so they stay upright. */
+var R = {
+  on: false,
+  shown: 0,          // rotation applied, unwrapped so it always turns the short way
+  heading: null,     // degrees clockwise from north, null until known
+  lastFix: null,     // last position used to derive a heading from movement
+  layoutKey: ''
+};
+
+function enableRotation() {
+  if (R.on) return;
+  R.on = true;
+  el.map.classList.add('is-rotated');
+  el.rotAttr.hidden = false;
+  // Dragging a rotated map moves it the wrong way, and zooming should keep the
+  // rider in place, so: no panning, and zoom about the centre (the rider).
+  map.dragging.disable();
+  map.options.touchZoom = map.options.scrollWheelZoom = map.options.doubleClickZoom = 'center';
+  layoutRotatedMap();
+  applyRotation();
+}
+
+function disableRotation() {
+  if (!R.on) return;
+  R.on = false;
+  var c = map.getCenter(), z = map.getZoom();
+  el.map.classList.remove('is-rotated');
+  el.map.style.cssText = '';
+  el.rotAttr.hidden = true;
+  R.layoutKey = '';
+  map.dragging.enable();
+  map.options.touchZoom = map.options.scrollWheelZoom = map.options.doubleClickZoom = true;
+  map.invalidateSize({ pan: false });
+  map.setView(c, z, { animate: false });
+  syncCompass();
+}
+
+/* Where on screen the rider's dot sits: centred across, about two thirds of
+ * the way down the strip of map between the banner and the panel. */
+function rotationAnchor() {
+  var wide = window.innerWidth >= 760;
+  var top = topPx(), bottom = window.innerHeight - sheetPx();
+  var w = wide ? window.innerWidth - 416 : window.innerWidth;
+  return { x: w / 2, y: top + (bottom - top) * 0.66 };
+}
+
+function layoutRotatedMap() {
+  if (!R.on) return;
+  var a = rotationAnchor(), W = window.innerWidth, H = window.innerHeight;
+  var r = Math.ceil(Math.max(Math.hypot(a.x, a.y), Math.hypot(W - a.x, a.y),
+                             Math.hypot(a.x, H - a.y), Math.hypot(W - a.x, H - a.y))) + 4;
+  var key = [Math.round(a.x), Math.round(a.y), r].join(',');
+  if (key === R.layoutKey) return;
+  R.layoutKey = key;
+  var c = map.getCenter();
+  el.map.style.left = (a.x - r) + 'px';
+  el.map.style.top = (a.y - r) + 'px';
+  el.map.style.width = el.map.style.height = (2 * r) + 'px';
+  map.invalidateSize({ pan: false });
+  map.setView(S.me ? [S.me.lat, S.me.lon] : c, map.getZoom(), { animate: false });
+}
+
+function applyRotation() {
+  var target = R.on && R.heading != null ? R.heading : 0;
+  var diff = ((target - R.shown) % 360 + 540) % 360 - 180;
+  // Ignore jitter of a couple of degrees so the map is not constantly nudging.
+  if (Math.abs(diff) >= 3 || target === 0) R.shown += diff;
+  var rot = R.on ? R.shown : 0;
+  el.map.style.transform = R.on ? 'rotate(' + (-rot) + 'deg)' : '';
+  document.documentElement.style.setProperty('--map-unrot', rot + 'deg');
+  syncCompass();
+}
+
+/* Compass button: the needle always points to north on screen; tapping it
+ * switches between heading-up and north-up. */
+function syncCompass() {
+  if (!el.btnCompass) return;
+  var rot = R.on ? R.shown : 0;
+  el.btnCompass.querySelector('svg').style.transform = 'rotate(' + (-rot) + 'deg)';
+  el.btnCompass.classList.toggle('is-on', S.headingUp);
+  el.btnCompass.title = S.headingUp
+    ? 'Heading up — tap for north up'
+    : 'North up — tap to turn the map with you';
+  el.btnCompass.setAttribute('aria-label', el.btnCompass.title);
+}
+
+function toggleHeadingUp() {
+  S.headingUp = !S.headingUp;
+  try { localStorage.setItem('pbc.headingUp', S.headingUp ? '1' : '0'); } catch (e) { /* ignore */ }
+  if (S.navigating && S.headingUp) enableRotation();
+  else disableRotation();
+  if (S.navigating && S.me) map.setView([S.me.lat, S.me.lon], map.getZoom(), { animate: false });
+  syncCompass();
+}
+
+/* Direction of travel. The GPS course is best while moving; below walking
+ * pace it is noise, so fall back to the bearing between fixes at least 10 m
+ * apart, and before the first move use the route's direction just ahead.
+ * Stopped at a light, the last heading is kept rather than spinning. */
+function updateHeading(pos, route, proj) {
+  var c = pos.coords, h = null;
+  if (c.heading != null && isFinite(c.heading) && (c.speed || 0) > 1.5) {
+    h = c.heading;
+  } else if (R.lastFix && fixDist(R.lastFix, S.me) > 10 && (S.me.accuracy || 0) < 25) {
+    h = fixBearing(R.lastFix, S.me);
+  } else if (R.heading == null && route.geometry && proj.offRouteM < 40) {
+    h = routeBearingAt(route.geometry, proj.alongM);
+  }
+  if (!R.lastFix || fixDist(R.lastFix, S.me) > 10) R.lastFix = { lat: S.me.lat, lon: S.me.lon };
+  if (h == null) return;
+  R.heading = (h + 360) % 360;
+  var me = meMarker && meMarker.getElement();
+  if (me) {
+    me.classList.add('has-heading');
+    me.querySelector('.me-head').style.transform = 'rotate(' + R.heading + 'deg)';
+  }
+  applyRotation();
+}
+
+function fixDist(a, b) {
+  var kx = 111320 * Math.cos(a.lat * Math.PI / 180);
+  return Math.hypot((b.lon - a.lon) * kx, (b.lat - a.lat) * 110540);
+}
+
+function fixBearing(a, b) {
+  var kx = 111320 * Math.cos(a.lat * Math.PI / 180);
+  return Math.atan2((b.lon - a.lon) * kx, (b.lat - a.lat) * 110540) * 180 / Math.PI;
+}
+
+/* Bearing of the route from the point alongM metres in to 25 m further on,
+ * measured the same way projectOnRoute measures distance along it. */
+function routeBearingAt(coords, alongM) {
+  function pointAt(m) {
+    var along = 0;
+    for (var i = 0; i < coords.length - 1; i++) {
+      var a = { lat: coords[i][1], lon: coords[i][0] };
+      var b = { lat: coords[i + 1][1], lon: coords[i + 1][0] };
+      var len = fixDist(a, b);
+      if (along + len >= m && len > 0) {
+        var t = (m - along) / len;
+        return { lat: a.lat + t * (b.lat - a.lat), lon: a.lon + t * (b.lon - a.lon) };
+      }
+      along += len;
+    }
+    var l = coords[coords.length - 1];
+    return { lat: l[1], lon: l[0] };
+  }
+  var p = pointAt(Math.max(0, alongM)), q = pointAt(alongM + 25);
+  return fixDist(p, q) < 1 ? null : fixBearing(p, q);
+}
+
 /* ------------------------------------------------------------- navigation */
 
 function startNav() {
@@ -719,6 +901,11 @@ function startNav() {
   setSheet('peek');
   el.navVerb.textContent = 'Getting your location…';
   el.navDist.textContent = '—';
+  el.btnCompass.hidden = false;
+  R.heading = null; R.lastFix = null;
+  keepAwake(true);
+  if (S.headingUp) enableRotation();
+  syncCompass();
 
   S.watchId = navigator.geolocation.watchPosition(onPosition, function (err) {
     toast(err.code === 1
@@ -731,6 +918,10 @@ function stopNav() {
   S.navigating = false;
   if (S.watchId != null) navigator.geolocation.clearWatch(S.watchId);
   S.watchId = null;
+  keepAwake(false);
+  disableRotation();
+  el.btnCompass.hidden = true;
+  if (meMarker) meMarker.getElement().classList.remove('has-heading');
   el.navBanner.hidden = true;
   el.sheet.classList.remove('has-nav');
   setSheet('half');
@@ -750,6 +941,7 @@ function onPosition(pos) {
   if (!route) return;
 
   var proj = projectOnRoute(route.geometry, S.me.lat, S.me.lon);
+  updateHeading(pos, route, proj);
   map.setView([S.me.lat, S.me.lon], Math.max(map.getZoom(), 16), { animate: true });
 
   // Drifted off the line for real? Ask BRouter for a fresh route from here.
@@ -794,7 +986,8 @@ function showMe() {
   if (!S.me) return;
   if (!meMarker) {
     meMarker = L.marker([S.me.lat, S.me.lon], {
-      icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>',
+      icon: L.divIcon({ className: 'me-wrap',
+                        html: '<div class="me-head"></div><div class="me-dot"></div>',
                         iconSize: [16, 16], iconAnchor: [8, 8] }),
       zIndexOffset: 1000, interactive: false
     }).addTo(map);
@@ -827,6 +1020,7 @@ function setSheet(state) {
   requestAnimationFrame(function () {
     var h = sheetPx();
     document.documentElement.style.setProperty('--sheet-h', h + 'px');
+    layoutRotatedMap();
   });
 }
 
@@ -938,8 +1132,14 @@ function wire() {
     if (S.navigating) stopNav(); else startNav();
   });
   el.btnStopNav.addEventListener('click', stopNav);
+  el.btnCompass.addEventListener('click', toggleHeadingUp);
+  el.sheet.addEventListener('transitionend', layoutRotatedMap);
+  window.addEventListener('resize', function () { layoutRotatedMap(); });
+  document.addEventListener('visibilitychange', function () {
+    if (S.navigating && document.visibilityState === 'visible') keepAwake(true);
+  });
   el.btnGmaps.addEventListener('click', function () {
-    if (S.selected) openInGoogleMaps(S.selected, routeFor(S.selected, S.profile));
+    if (S.selected) openInGoogleMaps(S.selected);
   });
 
   wireSheetDrag();
@@ -974,12 +1174,14 @@ function boot(storesDoc, indexDoc) {
   var savedPace = parseFloat(localStorage.getItem('pbc.pace'));
   if (isFinite(savedPace) && savedPace > 0) S.paceKmh = savedPace;
   S.profile = localStorage.getItem('pbc.profile') || 'balanced';
+  S.headingUp = localStorage.getItem('pbc.headingUp') !== '0';
 
   ['map', 'search', 'btnUnits', 'btnLocate', 'btnFit', 'btnLayer', 'sheet', 'grab',
    'listView', 'detailView', 'listCount', 'storeList', 'pace', 'paceOut', 'btnBack',
    'dStore', 'dAddr', 'dTime', 'dTimeLbl', 'dDist', 'dArrive', 'dRoadBar', 'dRoadLegend', 'dWarn',
    'dSteps', 'dStepCount', 'dHours', 'btnNav', 'btnGmaps', 'btnCall', 'navBanner',
-   'navIcon', 'navDist', 'navVerb', 'navRemaining', 'btnStopNav', 'toast', 'startLabel'
+   'navIcon', 'navDist', 'navVerb', 'navRemaining', 'btnStopNav', 'toast', 'startLabel',
+   'btnCompass', 'rotAttr'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
 
   el.startLabel.textContent = 'from ' + S.start.name;

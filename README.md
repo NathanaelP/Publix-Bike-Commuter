@@ -27,9 +27,11 @@ here and a great deal safer. See [Why sidewalks](#why-sidewalks) below.
   steps, so you can plan around how fast *you* actually ride.
 - **Turn-by-turn directions** with real street names.
 - **Navigate mode** follows your GPS, counts down to the next turn, and
-  re-routes if you come off the line.
-- **Hand off to Google Maps** at any point, passing waypoints from the planned
-  route so Google follows roughly the same path.
+  re-routes if you come off the line. The map turns so the way you're riding
+  points up (tap the compass to switch to north-up), and the screen stays on.
+- **Hand off to Google Maps** at any point. It opens straight into one
+  continuous bike trip to the store, with no stops along the way. Google picks
+  its own bike route, which may differ a little from the planned one.
 - **Works with no signal.** All district routes, directions and store details
   are baked in; map tiles cache as you view them.
 

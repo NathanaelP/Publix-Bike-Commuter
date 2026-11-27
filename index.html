@@ -39,6 +39,9 @@
 </header>
 
 <div class="maptools">
+  <button id="btnCompass" class="iconbtn compass" type="button" hidden title="Heading up — tap for north up" aria-label="Heading up — tap for north up">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l4 9h-8z" fill="#d93025" stroke="#d93025"/><path d="M12 21l-4-9h8z" fill="currentColor"/></svg>
+  </button>
   <button id="btnLocate" class="iconbtn" type="button" title="Show my location" aria-label="Show my location">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
   </button>
@@ -64,6 +67,8 @@
     <button id="btnStopNav" class="btn btn-ghost btn-sm" type="button">End</button>
   </div>
 </div>
+
+<div id="rotAttr" class="rot-attr" hidden>© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></div>
 
 <!-- Bottom sheet -->
 <section id="sheet" class="sheet sheet-half" aria-label="Store details">
